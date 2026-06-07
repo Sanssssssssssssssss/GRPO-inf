@@ -5,146 +5,185 @@ import json
 from grpo_inf.rewards.reviewer_reward import score_completion
 
 
-DOCS = [
-    {
-        "source_id": "invoice_001",
-        "doc_type": "invoice",
-        "ocr_text": "INVOICE\nVendor: Demo Medical Ltd\nTotal Due: GBP 120.00\nBank Account: GB00 DEMO 9999",
-    },
-    {
-        "source_id": "po_001",
-        "doc_type": "purchase_order",
-        "ocr_text": "PURCHASE ORDER\nSupplier: Demo Medical Ltd\nPO Total: GBP 100.00",
-    },
-]
-
-ORACLE = {
-    "decision": "hold",
-    "risk_level": "high",
-    "findings": [
+PAYLOAD = {
+    "mode": "extract",
+    "attachment_context": [
         {
-            "type": "amount_mismatch",
-            "severity": "high",
-            "expected": "GBP 100.00",
-            "observed": "GBP 120.00",
-            "source_ids": ["invoice_001", "po_001"],
-            "evidence_quotes": ["Total Due: GBP 120.00", "PO Total: GBP 100.00"],
-            "recommended_action": "Hold payment and reconcile the invoice total against the PO.",
+            "attachment_id": "att_invoice_001",
+            "name": "invoice_001.txt",
+            "original_ref": "public/invoice_001.txt",
+            "content": "INVOICE\nInvoice No: INV-100\nSupplier: Demo Medical Ltd\nTotal Due: GBP 100.00",
         }
     ],
-    "missing_evidence": [],
-    "unsupported_items": [],
-    "confidence": 0.92,
+    "extraction_context": [],
+    "extraction_result": {},
 }
 
 
-def completion(**updates: object) -> str:
-    value = {
-        "decision": "hold",
-        "risk_level": "high",
-        "findings": [
-            {
-                "type": "amount_mismatch",
-                "severity": "high",
-                "expected": "GBP 100.00",
-                "observed": "GBP 120.00",
-                "source_ids": ["invoice_001", "po_001"],
-                "evidence_quotes": ["Total Due: GBP 120.00", "PO Total: GBP 100.00"],
-                "recommended_action": "Hold payment and reconcile the invoice total against the PO.",
-            }
-        ],
-        "missing_evidence": [],
-        "unsupported_items": [],
-        "confidence": 0.92,
-    }
-    value.update(updates)
-    return json.dumps(value)
+EXTRACT_GOLD = {
+    "mode": "extract",
+    "source_doc_id": "invoice_001.txt",
+    "evidence_type": "invoice",
+    "credibility": "high",
+    "extracted_fields": {
+        "invoice_number": {
+            "value": "INV-100",
+            "status": "present",
+            "source_quote": "Invoice No: INV-100",
+            "source_locator": "invoice_001.txt OCR",
+            "confidence": "high",
+        }
+    },
+    "extraction_result": {"source_doc_id": "invoice_001.txt", "invoice_number": "INV-100"},
+    "source_traceability": "original_document",
+    "support_level": "partial",
+    "risk_flags": [],
+    "should_accept": False,
+    "reason": "Extraction only.",
+    "supports": [],
+    "conflicts": [],
+    "evidence_cards": [],
+    "suggested_patch": {
+        "summary": None,
+        "conversation_summary": None,
+        "case_profile": None,
+        "requirements": [],
+        "remove_requirements": [],
+        "add_evidence": [],
+        "evidence_items": [],
+        "risk_flags": [],
+        "next_questions": [],
+        "next_action_hint": "extract_current_attachment",
+        "reply_brief": None,
+        "evidence_cards": None,
+    },
+    "reply_to_user": "Extracted invoice fields.",
+}
 
 
-def test_good_completion_scores_high() -> None:
-    score = score_completion(completion(), ORACLE, DOCS)
+REVIEW_PAYLOAD = {
+    "mode": "review",
+    "attachment_context": PAYLOAD["attachment_context"],
+    "extraction_context": [{"source_doc_id": "invoice_001.txt", "invoice_number": "INV-100", "source_quote": "Invoice No: INV-100"}],
+    "extraction_result": {"source_doc_id": "invoice_001.txt", "invoice_number": "INV-100"},
+}
+
+
+REVIEW_GOLD = {
+    **EXTRACT_GOLD,
+    "mode": "review",
+    "support_level": "full",
+    "should_accept": True,
+    "reason": "Invoice number is supported.",
+    "supports": [{"requirement": "invoice_number", "support_level": "full", "quoted_text": "Invoice No: INV-100"}],
+    "evidence_cards": [
+        {
+            "title": "Invoice INV-100",
+            "doc_type": "invoice",
+            "source_ref": "invoice_001.txt",
+            "extracted_summary": "Invoice number INV-100.",
+            "visual_summary": "OCR text only.",
+            "supports": [{"requirement": "invoice_number", "support_level": "full", "quoted_text": "Invoice No: INV-100"}],
+            "conflicts": [],
+        }
+    ],
+    "suggested_patch": {
+        **EXTRACT_GOLD["suggested_patch"],
+        "add_evidence": [{"id": "evidence_invoice_001", "source_doc_id": "invoice_001.txt"}],
+        "next_action_hint": "accept_evidence",
+    },
+}
+
+
+def dumps(value: dict[str, object]) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def test_extract_completion_scores_high() -> None:
+    score = score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD)
     assert score["total"] > 0.95
     assert score["schema_valid"] == 1.0
+    assert score["mode_correct"] == 1.0
     assert score["quote_hit_rate"] == 1.0
 
 
+def test_review_completion_scores_high() -> None:
+    score = score_completion(dumps(REVIEW_GOLD), REVIEW_GOLD, payload=REVIEW_PAYLOAD)
+    assert score["total"] > 0.95
+    assert score["support_f1"] == 1.0
+    assert score["should_accept_correct"] == 1.0
+
+
 def test_invalid_json_is_hard_fail() -> None:
-    score = score_completion("not json", ORACLE, DOCS)
+    score = score_completion("not json", EXTRACT_GOLD, payload=PAYLOAD)
     assert score["total"] == -1.0
     assert score["json_valid"] == 0.0
 
 
-def test_schema_invalid_caps_score() -> None:
-    bad = json.dumps({"decision": "hold", "risk_level": "high", "findings": []})
-    score = score_completion(bad, ORACLE, DOCS)
+def test_schema_invalid_caps_score_and_extra_fields_fail() -> None:
+    bad = {**EXTRACT_GOLD, "decision": "approve"}
+    score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
     assert score["schema_valid"] == 0.0
     assert score["total"] <= 0.2
 
 
 def test_missing_quote_penalizes_grounding() -> None:
-    bad_finding = json.loads(completion())["findings"][0]
-    bad_finding["evidence_quotes"] = ["Total Due: GBP 999.00"]
-    score = score_completion(completion(findings=[bad_finding]), ORACLE, DOCS)
+    bad = json.loads(dumps(EXTRACT_GOLD))
+    bad["extracted_fields"]["invoice_number"]["source_quote"] = "Invoice No: INV-999"
+    score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
     assert score["quote_hit_rate"] == 0.0
-    assert score["penalty"] < 0.0
-    assert score["total"] < 0.8
+    assert score["extract_penalty"] < 0.0
 
 
-def test_bad_source_id_penalized() -> None:
-    bad_finding = json.loads(completion())["findings"][0]
-    bad_finding["source_ids"] = ["missing_doc"]
-    score = score_completion(completion(findings=[bad_finding]), ORACLE, DOCS)
-    assert score["bad_source_count"] == 1
-    assert score["penalty"] < 0.0
+def test_invalid_source_doc_id_penalized() -> None:
+    bad = {**EXTRACT_GOLD, "source_doc_id": "missing.txt"}
+    score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["source_doc_valid"] == 0.0
+    assert score["total"] < 0.9
 
 
-def test_unsafe_approval_penalized() -> None:
-    score = score_completion(completion(decision="approve"), ORACLE, DOCS)
-    assert score["unsafe_approval"] == 1.0
-    assert score["total"] < 0.5
+def test_extract_mode_forbids_add_evidence() -> None:
+    bad = json.loads(dumps(EXTRACT_GOLD))
+    bad["suggested_patch"]["add_evidence"] = [{"id": "not_allowed"}]
+    score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["forbidden_patch_rate"] == 1.0
+    assert score["extract_penalty"] < 0.0
 
 
-def test_prompt_injection_following_is_hard_fail() -> None:
-    oracle = {
-        **ORACLE,
-        "decision": "escalate",
-        "risk_level": "critical",
-        "findings": [
-            {
-                "type": "prompt_injection",
-                "severity": "critical",
-                "expected": "ignore",
-                "observed": "Security Note: [redacted prompt injection]",
-                "source_ids": ["invoice_001"],
-                "evidence_quotes": ["Security Note: [redacted prompt injection]"],
-                "recommended_action": "Escalate.",
-            }
-        ],
-    }
-    docs = [{"source_id": "invoice_001", "ocr_text": "Security Note: [redacted prompt injection]"}]
-    score = score_completion(completion(decision="approve"), oracle, docs)
-    assert score["total"] == -1.0
-    assert score["prompt_injection_failure"] == 1.0
+def test_review_risk_conflict_scoring() -> None:
+    gold = json.loads(dumps(REVIEW_GOLD))
+    gold["support_level"] = "partial"
+    gold["should_accept"] = False
+    gold["risk_flags"] = ["amount_mismatch"]
+    gold["supports"] = []
+    gold["conflicts"] = [
+        {
+            "type": "amount_mismatch",
+            "conflict_type": "amount_mismatch",
+            "requirement": "amount_total",
+            "severity": "high",
+            "field": "amount_total",
+            "description": "Invoice total differs from PO total.",
+            "quoted_text": "Total Due: GBP 100.00",
+            "conflict_with": "PO total",
+            "required_follow_up": "Reconcile.",
+            "affected_fields": ["amount_total"],
+            "affected_evidence_ids": ["invoice_001.txt"],
+            "involved_evidence_ids": ["invoice_001.txt"],
+            "evidence_ids": ["invoice_001.txt"],
+            "source_values": {"invoice": "GBP 100.00"},
+            "suggested_resolution": "Hold.",
+        }
+    ]
+    score = score_completion(dumps(gold), gold, payload=REVIEW_PAYLOAD)
+    assert score["risk_flag_f1"] == 1.0
+    assert score["conflict_f1"] == 1.0
 
 
 def test_thought_and_markdown_wrappers_parse_but_penalize() -> None:
-    wrapped = "<think>private reasoning</think>\n```json\n" + completion() + "\n```"
-    score = score_completion(wrapped, ORACLE, DOCS)
+    wrapped = "<think>private reasoning</think>\n```json\n" + dumps(EXTRACT_GOLD) + "\n```"
+    score = score_completion(wrapped, EXTRACT_GOLD, payload=PAYLOAD)
     assert score["json_valid"] == 1.0
     assert score["thought_leak"] == 1.0
     assert score["markdown_fence"] == 1.0
-    assert score["total"] < score_completion(completion(), ORACLE, DOCS)["total"]
-
-
-def test_clean_case_over_reporting_scores_lower() -> None:
-    clean_oracle = {
-        "decision": "approve",
-        "risk_level": "low",
-        "findings": [],
-        "missing_evidence": [],
-        "unsupported_items": [],
-        "confidence": 0.95,
-    }
-    score = score_completion(completion(decision="approve", risk_level="low"), clean_oracle, DOCS)
-    assert score["finding_f1_reward"] == 0.0
-    assert score["total"] < 0.7
+    assert score["total"] < score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD)["total"]

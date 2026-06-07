@@ -1,24 +1,29 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 from grpo_inf.io import read_jsonl, write_json, write_jsonl
-from grpo_inf.rewards.reviewer_reward import score_completion
+from grpo_inf.rewards.reviewer_reward import score_sample_completion
 
 
 METRIC_KEYS = (
     "total",
     "json_valid",
     "schema_valid",
-    "finding_f1_reward",
-    "decision_correct",
-    "risk_correct",
+    "contract_valid",
+    "mode_correct",
+    "source_doc_valid",
+    "extract_field_value_score",
+    "extract_present_field_f1",
+    "extract_missing_field_f1",
+    "support_level_correct",
+    "should_accept_correct",
+    "risk_flag_f1",
+    "support_f1",
+    "conflict_f1",
     "quote_hit_rate",
-    "unsafe_approval",
-    "prompt_injection_failure",
-    "bad_source_count",
+    "forbidden_patch_rate",
     "thought_leak",
     "markdown_fence",
 )
@@ -29,13 +34,22 @@ def _case_id(row: dict[str, Any]) -> str:
 
 
 def _completion(row: dict[str, Any]) -> Any:
-    if "completion" in row:
-        return row["completion"]
-    if "output" in row:
-        return row["output"]
-    if "response" in row:
-        return row["response"]
+    for key in ("completion", "output", "response", "answer"):
+        if key in row:
+            return row[key]
     return ""
+
+
+def _mode(row: dict[str, Any]) -> str:
+    gold = row.get("gold") or row.get("answer") or row.get("expected_answer") or row.get("oracle") or {}
+    if isinstance(gold, dict) and gold.get("mode"):
+        return str(gold["mode"])
+    payload = row.get("input") if isinstance(row.get("input"), dict) else {}
+    return str(payload.get("mode") or "unknown")
+
+
+def _category(row: dict[str, Any]) -> str:
+    return str(row.get("scenario") or row.get("category") or _mode(row) or "unknown")
 
 
 def evaluate_outputs(
@@ -58,13 +72,12 @@ def evaluate_outputs(
             continue
         seen.add(cid)
         sample = samples[cid]
-        oracle = sample.get("oracle") or sample.get("reviewer_oracle") or {}
-        score = score_completion(_completion(output), oracle, sample.get("documents", []))
+        score = score_sample_completion(_completion(output), sample)
         scored_rows.append(
             {
                 "case_id": cid,
-                "category": sample.get("category", "unknown"),
-                "difficulty": sample.get("difficulty", "unknown"),
+                "mode": _mode(sample),
+                "category": _category(sample),
                 **score,
             }
         )
@@ -87,10 +100,16 @@ def evaluate_outputs(
         {
             "json_valid_rate": summary["json_valid"],
             "schema_valid_rate": summary["schema_valid"],
-            "finding_macro_f1": summary["finding_f1_reward"],
-            "decision_accuracy": summary["decision_correct"],
-            "risk_accuracy": summary["risk_correct"],
-            "unsupported_claim_rate": sum(1 for row in scored_rows if row.get("bad_source_count", 0) > 0) / len(scored_rows),
+            "contract_valid_rate": summary["contract_valid"],
+            "mode_accuracy": summary["mode_correct"],
+            "source_doc_valid_rate": summary["source_doc_valid"],
+            "quote_hit_rate": summary["quote_hit_rate"],
+            "extract_field_f1": summary["extract_present_field_f1"],
+            "review_support_f1": summary["support_f1"],
+            "review_conflict_f1": summary["conflict_f1"],
+            "review_risk_flag_f1": summary["risk_flag_f1"],
+            "unsupported_claim_rate": 1.0 - summary["source_doc_valid"],
+            "integration_consumable_rate": summary["schema_valid"],
             "missing_outputs": missing_outputs[:20],
             "unknown_outputs": unknown_outputs[:20],
         }
@@ -101,13 +120,24 @@ def evaluate_outputs(
         by_category[category] = {
             "n": len(rows),
             "reward": sum(float(row["total"]) for row in rows) / len(rows),
-            "finding_f1": sum(float(row["finding_f1_reward"]) for row in rows) / len(rows),
-            "decision_accuracy": sum(float(row["decision_correct"]) for row in rows) / len(rows),
+            "schema_valid_rate": sum(float(row["schema_valid"]) for row in rows) / len(rows),
             "quote_hit_rate": sum(float(row["quote_hit_rate"]) for row in rows) / len(rows),
+            "support_f1": sum(float(row.get("support_f1", 0.0)) for row in rows) / len(rows),
+            "conflict_f1": sum(float(row.get("conflict_f1", 0.0)) for row in rows) / len(rows),
         }
     summary["by_category"] = by_category
+    by_mode: dict[str, dict[str, Any]] = {}
+    for mode in sorted({row["mode"] for row in scored_rows}):
+        rows = [row for row in scored_rows if row["mode"] == mode]
+        by_mode[mode] = {
+            "n": len(rows),
+            "reward": sum(float(row["total"]) for row in rows) / len(rows),
+            "schema_valid_rate": sum(float(row["schema_valid"]) for row in rows) / len(rows),
+            "quote_hit_rate": sum(float(row["quote_hit_rate"]) for row in rows) / len(rows),
+        }
+    summary["by_mode"] = by_mode
     summary["worst_cases"] = [
-        {"case_id": row["case_id"], "category": row["category"], "total": row["total"], "errors": row.get("errors", [])}
+        {"case_id": row["case_id"], "mode": row["mode"], "category": row["category"], "total": row["total"], "errors": row.get("errors", [])}
         for row in sorted(scored_rows, key=lambda item: float(item["total"]))[:10]
     ]
 

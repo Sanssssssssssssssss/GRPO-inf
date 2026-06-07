@@ -11,8 +11,8 @@ dist/
 *.egg-info/
 
 # Local data and model artifacts
-data/
-datasets/
+/data/
+/datasets/
 *.zip
 *.tar
 *.tar.gz

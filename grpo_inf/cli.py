@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from grpo_inf.data.audit import audit_dataset
+from grpo_inf.data.build_dataset import build_dataset
 from grpo_inf.evaluation.evaluate import evaluate_outputs
-from grpo_inf.schema import REVIEWER_ANSWER_SCHEMA
+from grpo_inf.schema import REVIEWER_ANSWER_SCHEMA, write_schema
 from grpo_inf.training.grpo import run_grpo
 from grpo_inf.training.sft import run_sft
 from grpo_inf.viz.dashboard import render_dashboard
@@ -24,6 +25,20 @@ def build_parser() -> argparse.ArgumentParser:
     audit = sub.add_parser("audit-dataset", help="Audit reviewer JSONL dataset or zip")
     audit.add_argument("--data", required=True, help="Dataset directory or zip")
     audit.add_argument("--out", help="Optional JSON report path")
+    audit.add_argument("--schema", default="evidence_review_result", choices=["evidence_review_result", "ap_risk_ablation"])
+    audit.add_argument("--strict-split-source-uniqueness", action="store_true")
+    audit.add_argument("--smoke-seed", action="store_true")
+    audit.add_argument("--min-cases", type=int)
+
+    build = sub.add_parser("build-dataset", help="Build or normalize EvidenceReviewResult reviewer datasets")
+    build.add_argument("--source", required=True, choices=["fatura", "zip-smoke"])
+    build.add_argument("--target-cases", type=int, default=500)
+    build.add_argument("--repo-root", help="invoice-case-workbench-openai-sdk checkout for Fatura builds")
+    build.add_argument("--out", required=True)
+    build.add_argument("--input-zip", help="public_review_500_v2 zip for zip-smoke imports")
+    build.add_argument("--pipeline-zip", help="public invoice pipeline zip; defaults to PUBLIC_INVOICE_PIPELINE_ZIP or Downloads path")
+    build.add_argument("--fatura-zip", help="Existing FATURA.zip path")
+    build.add_argument("--no-download", action="store_true", help="Do not download FATURA inside the pipeline")
 
     eval_cmd = sub.add_parser("eval-reviewer", help="Score model outputs against reviewer oracle")
     eval_cmd.add_argument("--samples", required=True, help="GRPO samples JSONL")
@@ -53,7 +68,29 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "audit-dataset":
-        _print_json(audit_dataset(args.data, args.out))
+        _print_json(
+            audit_dataset(
+                args.data,
+                args.out,
+                schema_name=args.schema,
+                strict_split_source_uniqueness=args.strict_split_source_uniqueness,
+                smoke_seed=args.smoke_seed,
+                min_cases=args.min_cases,
+            )
+        )
+    elif args.command == "build-dataset":
+        _print_json(
+            build_dataset(
+                source=args.source,
+                out_dir=args.out,
+                target_cases=args.target_cases,
+                repo_root=args.repo_root,
+                input_zip=args.input_zip,
+                pipeline_zip=args.pipeline_zip,
+                download=not args.no_download,
+                fatura_zip=args.fatura_zip,
+            )
+        )
     elif args.command == "eval-reviewer":
         _print_json(evaluate_outputs(args.samples, args.outputs, args.summary_out, args.scored_out))
     elif args.command == "visualize-run":
@@ -65,8 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         _print_json(run_grpo(args.config, args.run_id, args.execute))
     elif args.command == "print-schema":
         if args.out:
-            Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.out).write_text(json.dumps(REVIEWER_ANSWER_SCHEMA, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            write_schema(args.out)
             _print_json({"schema": args.out})
         else:
             _print_json(REVIEWER_ANSWER_SCHEMA)

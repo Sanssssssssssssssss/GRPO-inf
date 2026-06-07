@@ -24,10 +24,10 @@ def _figure_html(metrics: list[dict[str, Any]], summary: dict[str, Any]) -> str:
     parts: list[str] = []
     if metrics:
         steps = [row.get("step", index) for index, row in enumerate(metrics)]
-        fig = make_subplots(rows=2, cols=1, subplot_titles=("Reward", "Core Rates"))
+        fig = make_subplots(rows=2, cols=1, subplot_titles=("Reward", "EvidenceReviewResult Contract Metrics"))
         if any("reward" in row for row in metrics):
             fig.add_trace(go.Scatter(x=steps, y=[row.get("reward") for row in metrics], name="reward"), row=1, col=1)
-        for key in ("json_valid_rate", "schema_valid_rate", "quote_hit_rate", "unsafe_approval_rate"):
+        for key in ("json_valid_rate", "schema_valid_rate", "contract_valid_rate", "quote_hit_rate", "mode_accuracy"):
             if any(key in row for row in metrics):
                 fig.add_trace(go.Scatter(x=steps, y=[row.get(key) for row in metrics], name=key), row=2, col=1)
         fig.update_layout(height=720, template="plotly_white")
@@ -37,9 +37,9 @@ def _figure_html(metrics: list[dict[str, Any]], summary: dict[str, Any]) -> str:
     if by_category:
         categories = list(by_category)
         fig = go.Figure()
-        for metric in ("reward", "finding_f1", "decision_accuracy", "quote_hit_rate"):
+        for metric in ("reward", "schema_valid_rate", "support_f1", "conflict_f1", "quote_hit_rate"):
             fig.add_bar(name=metric, x=categories, y=[by_category[cat].get(metric, 0) for cat in categories])
-        fig.update_layout(barmode="group", height=520, template="plotly_white", title="Eval by category")
+        fig.update_layout(barmode="group", height=520, template="plotly_white", title="Eval by scenario/category")
         parts.append(fig.to_html(full_html=False, include_plotlyjs=False))
     return "\n".join(parts)
 

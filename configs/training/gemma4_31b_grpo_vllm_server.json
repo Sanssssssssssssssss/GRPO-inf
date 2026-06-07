@@ -28,8 +28,10 @@
     "logging_steps": 10,
     "save_steps": 100,
     "save_total_limit": 3,
-    "use_vllm": false,
-    "notes": "Colocate/Transformers generation profile for first CSD3 bring-up. Use gemma4_31b_grpo_vllm_server.json when rollout GPUs are available.",
+    "use_vllm": true,
+    "vllm_mode": "server",
+    "vllm_server_host": "${VLLM_SERVER_HOST}",
+    "vllm_server_port": "${VLLM_SERVER_PORT}",
     "gradient_checkpointing": true,
     "log_completions": true
   }

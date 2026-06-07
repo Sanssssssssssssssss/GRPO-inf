@@ -3,15 +3,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from grpo_inf.rewards.reviewer_reward import score_completion
+from grpo_inf.rewards.reviewer_reward import reward_func
 from grpo_inf.training.common import dry_run_summary, prepare_training_run
 from grpo_inf.training.config import load_config
 
 
 def _trl_reward(completions: list[Any], **kwargs: Any) -> list[float]:
-    oracles = kwargs["oracle"]
-    documents = kwargs["documents"]
-    return [score_completion(comp, oracle, docs)["total"] for comp, oracle, docs in zip(completions, oracles, documents)]
+    return reward_func(completions, **kwargs)
 
 
 def run_grpo(config_path: str, run_id: str | None = None, execute: bool = False) -> dict[str, Any]:

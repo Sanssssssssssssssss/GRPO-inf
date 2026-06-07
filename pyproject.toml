@@ -29,6 +29,10 @@ dev = [
   "pytest>=8.2",
   "plotly>=5.22",
 ]
+data = [
+  "requests>=2.32",
+  "tqdm>=4.66",
+]
 
 [project.scripts]
 grpo-inf = "grpo_inf.cli:main"

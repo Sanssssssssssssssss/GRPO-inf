@@ -1,37 +1,42 @@
 # GRPO-inf
 
-Clean infrastructure for training an accounts-payable evidence reviewer with
-Gemma 4 31B-it + LoRA/QLoRA + TRL GRPO on CSD3 Slurm.
+Clean infrastructure for training the `invoice-case-workbench-openai-sdk`
+`evidence_reviewer` with Gemma 4 31B-it + LoRA/QLoRA + TRL GRPO on CSD3 Slurm.
 
-The first version is intentionally infra-first: it does not download models or
-train locally by default. It provides the reward function, dataset audit,
-offline evaluation, run visualization, training entrypoints, Slurm scripts, and
-serving profiles needed to move the job to CSD3.
+This repo is infra-first. It does not download large models or train locally by
+default. It provides the EvidenceReviewResult schema contract, dataset builder,
+dataset audit, reward functions, offline evaluation, static Plotly dashboards,
+training entrypoints, Slurm launch scripts, and vLLM serving profiles.
 
 ## What This Trains
 
-The reviewer reads OCR evidence and returns strict JSON only:
+The main output contract is the workbench `EvidenceReviewResult`, not a separate
+AP-risk schema. The reviewer must return strict JSON with fields such as:
 
-- `decision`: `approve`, `hold`, `reject`, or `escalate`
-- `risk_level`: `low`, `medium`, `high`, or `critical`
-- `findings`: typed findings with valid `source_ids` and exact
-  `evidence_quotes`
-- `missing_evidence`, `unsupported_items`, `confidence`
+- `mode`: `extract`, `review`, or `repair`
+- `source_doc_id`, `evidence_type`, `credibility`, `source_traceability`
+- `extracted_fields` and `extraction_result`
+- `support_level`, `risk_flags`, `should_accept`
+- `supports`, `conflicts`, `evidence_cards`
+- `suggested_patch`, `reply_to_user`
 
-The reward is verifiable. It scores JSON/schema validity, finding F1,
-decision/risk accuracy, source grounding, exact quote hits, action consistency,
-and concision. It penalizes hallucinated evidence, bad source IDs, unsafe
-approvals, prompt-injection following, markdown fences, and thought leakage.
+The old `decision/risk_level/findings` schema is retained only as
+`ap_risk_ablation`; it is not the default training, reward, eval, or serving
+route.
 
 ## Dataset Policy
 
-The seed zip `invoice_reviewer_grpo_dataset_v0.zip` is useful for v0 smoke
-training and reward development, but it is not a final locked evaluation set.
-The audit detects vendor/template overlap across splits in that zip, so scores
-from it should be treated as development signals only.
+`invoice_reviewer_public_review_500_v2.zip` is useful for schema, reward, and
+pipeline smoke tests. It is not final training data because its source documents
+repeat across splits. Smoke audits mark it with `not_for_final_training=true`.
 
-This public repo commits only small fixtures, schemas, scripts, and reports.
-Keep full datasets, checkpoints, adapters, and model caches outside git.
+Formal public invoice training data must be built with strict split source
+uniqueness. If public source coverage is insufficient, the builder fails closed
+instead of fabricating cases.
+
+This public repo commits only code, schemas, configs, and tiny fixtures. Keep
+full datasets, zips, checkpoints, adapters, model caches, Slurm logs, and
+`outputs/` out of git.
 
 ## Quick Start
 
@@ -40,22 +45,49 @@ py -3 -m pip install -e ".[dev]"
 py -3 -m pytest
 ```
 
-Print the output schema:
+Print the active schema:
 
 ```powershell
-py -3 -m grpo_inf.cli print-schema --out schemas/reviewer_answer.schema.json
+py -3 -m grpo_inf.cli print-schema --out schemas/evidence_review_result.schema.json
 ```
 
-Audit the attached zip without extracting it into the repo:
+Smoke-import the attached public review package:
 
 ```powershell
-$env:INVOICE_REVIEWER_DATASET_ZIP = "D:\path\to\invoice_reviewer_grpo_dataset_v0.zip"
+py -3 -m grpo_inf.cli build-dataset `
+  --source zip-smoke `
+  --input-zip C:\Users\X\Downloads\invoice_reviewer_public_review_500_v2.zip `
+  --out outputs\tmp_public_review_smoke
+```
+
+Build the strict public invoice dataset through the pipeline zip:
+
+```powershell
+py -3 -m pip install -e ".[data]"
+py -3 -m grpo_inf.cli build-dataset `
+  --source fatura `
+  --target-cases 500 `
+  --repo-root ..\invoice-case-workbench-openai-sdk `
+  --out data\invoice_reviewer_public_500
+```
+
+Audit modes:
+
+```powershell
+# Smoke/dev packages may warn on source overlap.
 py -3 -m grpo_inf.cli audit-dataset `
-  --data $env:INVOICE_REVIEWER_DATASET_ZIP `
-  --out outputs/audit/invoice_reviewer_grpo_dataset_v0.audit.json
+  --data C:\Users\X\Downloads\invoice_reviewer_public_review_500_v2.zip `
+  --smoke-seed `
+  --min-cases 500
+
+# Formal training/locked eval packages must pass strict source uniqueness.
+py -3 -m grpo_inf.cli audit-dataset `
+  --data data\invoice_reviewer_public_500 `
+  --strict-split-source-uniqueness `
+  --min-cases 500
 ```
 
-Run an offline eval smoke test:
+Run offline eval and visualization smoke tests:
 
 ```powershell
 py -3 -m grpo_inf.cli eval-reviewer `
@@ -67,17 +99,26 @@ py -3 -m grpo_inf.cli eval-reviewer `
 py -3 -m grpo_inf.cli visualize-run --run-dir outputs\runs\smoke
 ```
 
-Dry-run training configs. These create run folders and config manifests, but do
-not import TRL or load a model:
+Dry-run training configs. These create run folders and manifests but do not load
+TRL or a model:
 
 ```powershell
 py -3 -m grpo_inf.cli train-sft --config configs\training\gemma4_31b_sft.json
 py -3 -m grpo_inf.cli train-grpo --config configs\training\gemma4_31b_grpo.json
 ```
 
+Opt-in tiny training smoke tests may download a tiny HF test model:
+
+```powershell
+py -3 -m pip install -e ".[train]"
+py -3 -m grpo_inf.cli train-sft --config configs\training\tiny_sft_smoke.json --execute
+py -3 -m grpo_inf.cli train-grpo --config configs\training\tiny_grpo_smoke.json --execute
+```
+
 ## CSD3
 
-Set `DATA_ROOT` to the extracted external dataset directory on CSD3. Then submit:
+Set `DATA_ROOT` to a strict-audited `invoice_reviewer_public_500` dataset on
+CSD3. Then submit:
 
 ```bash
 sbatch infra/slurm/train_sft_csd3_2xa10080.sh
@@ -98,12 +139,16 @@ outputs/runs/<run_id>/
   visualizations/
 ```
 
+For a later high-throughput rollout setup, start a separate vLLM server and use
+`configs/training/gemma4_31b_grpo_vllm_server.json`. The default 31B GRPO config
+keeps `use_vllm=false` for first CSD3 bring-up on 2x A100.
+
 ## Model Routes
 
 - Main training: `google/gemma-4-31B-it` with LoRA/QLoRA and TRL GRPO.
 - Low-cost fallback/ablation: `google/gemma-4-12B-it` config only.
-- Inference showcase: `google/gemma-4-26B-A4B-it` vLLM TP2/MTP profiles, isolated
-  from reviewer GRPO training.
+- Inference showcase: `google/gemma-4-26B-A4B-it` vLLM TP2/MTP profiles,
+  isolated from reviewer GRPO training.
 
 ## References
 

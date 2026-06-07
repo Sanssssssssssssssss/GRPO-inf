@@ -32,6 +32,8 @@ def test_eval_and_visualize_cli(tmp_path: Path) -> None:
     )
     payload = json.loads(result.stdout)
     assert payload["json_valid_rate"] == 1.0
+    assert payload["schema_valid_rate"] == 1.0
+    assert payload["mode_accuracy"] == 1.0
     assert summary.exists()
     assert scored.exists()
 
@@ -68,4 +70,19 @@ def test_print_schema_cli(tmp_path: Path) -> None:
     schema_path = tmp_path / "schema.json"
     run_cli("print-schema", "--out", str(schema_path))
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    assert "decision" in schema["properties"]
+    assert "mode" in schema["properties"]
+    assert "decision" not in schema["properties"]
+
+
+def test_build_dataset_zip_smoke_when_available(tmp_path: Path) -> None:
+    source_zip = Path("C:/Users/X/Downloads/invoice_reviewer_public_review_500_v2.zip")
+    if not source_zip.exists():
+        return
+    out = tmp_path / "public_review_smoke"
+    result = run_cli("build-dataset", "--source", "zip-smoke", "--input-zip", str(source_zip), "--out", str(out))
+    payload = json.loads(result.stdout)
+    assert payload["audit"]["total_cases"] == 500
+    assert payload["audit"]["not_for_final_training"] is True
+    assert (out / "sft" / "reviewer_train.jsonl").exists()
+    assert (out / "grpo" / "prompts_train.jsonl").exists()
+    assert (out / "eval" / "locked_cases.jsonl").exists()

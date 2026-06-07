@@ -16,7 +16,7 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$PWD}"
 mkdir -p outputs/slurm_logs
 
-: "${DATA_ROOT:?Set DATA_ROOT to the extracted invoice_reviewer_grpo_dataset_v0 directory on CSD3}"
+: "${DATA_ROOT:?Set DATA_ROOT to the strict-audited invoice_reviewer_public_500 dataset directory on CSD3}"
 
 export TOKENIZERS_PARALLELISM=false
 export WANDB_MODE="${WANDB_MODE:-offline}"
