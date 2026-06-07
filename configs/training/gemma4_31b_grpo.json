@@ -2,6 +2,7 @@
   "model_id": "google/gemma-4-31B-it",
   "data_path": "${DATA_ROOT}/grpo/prompts_train.jsonl",
   "output_root": "outputs",
+  "notes": "Colocate/Transformers generation profile for first CSD3 bring-up. Use gemma4_31b_grpo_vllm_server.json when rollout GPUs are available.",
   "bf16": true,
   "report_to": "none",
   "lora": {
@@ -29,7 +30,6 @@
     "save_steps": 100,
     "save_total_limit": 3,
     "use_vllm": false,
-    "notes": "Colocate/Transformers generation profile for first CSD3 bring-up. Use gemma4_31b_grpo_vllm_server.json when rollout GPUs are available.",
     "gradient_checkpointing": true,
     "log_completions": true
   }

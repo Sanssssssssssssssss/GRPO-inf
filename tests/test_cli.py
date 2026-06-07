@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -19,12 +20,20 @@ def test_eval_and_visualize_cli(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "smoke"
     summary = run_dir / "eval" / "summary.json"
     scored = run_dir / "eval" / "scored.jsonl"
+    sample_path = Path("examples/tiny_dataset/grpo/prompts_test_locked.jsonl")
+    sample = json.loads(sample_path.read_text(encoding="utf-8").splitlines()[0])
+    outputs_path = tmp_path / "model_outputs.jsonl"
+    outputs_path.write_text(
+        json.dumps({"case_id": sample["case_id"], "completion": json.dumps(sample["gold"], ensure_ascii=False)}, ensure_ascii=False)
+        + "\n",
+        encoding="utf-8",
+    )
     result = run_cli(
         "eval-reviewer",
         "--samples",
-        "examples/tiny_dataset/grpo/prompts_test_locked.jsonl",
+        str(sample_path),
         "--outputs",
-        "examples/tiny_dataset/outputs/model_outputs.jsonl",
+        str(outputs_path),
         "--summary-out",
         str(summary),
         "--scored-out",
@@ -66,6 +75,12 @@ def test_training_dry_run_cli(tmp_path: Path) -> None:
     assert (tmp_path / "outputs" / "runs" / "dry" / "config" / "grpo_config.json").exists()
 
 
+def test_default_grpo_config_has_no_repo_only_keys_in_grpo_block() -> None:
+    config = json.loads(Path("configs/training/gemma4_31b_grpo.json").read_text(encoding="utf-8"))
+    assert "notes" in config
+    assert "notes" not in config["grpo"]
+
+
 def test_print_schema_cli(tmp_path: Path) -> None:
     schema_path = tmp_path / "schema.json"
     run_cli("print-schema", "--out", str(schema_path))
@@ -86,3 +101,30 @@ def test_build_dataset_zip_smoke_when_available(tmp_path: Path) -> None:
     assert (out / "sft" / "reviewer_train.jsonl").exists()
     assert (out / "grpo" / "prompts_train.jsonl").exists()
     assert (out / "eval" / "locked_cases.jsonl").exists()
+    first = json.loads((out / "grpo" / "prompts_train.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    assert isinstance(first["input"], dict)
+    assert first["input"]["mode"] in {"extract", "review"}
+
+
+def test_fatura_build_requires_explicit_pipeline_zip(tmp_path: Path) -> None:
+    env = {key: value for key, value in os.environ.items() if key != "PUBLIC_INVOICE_PIPELINE_ZIP"}
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "grpo_inf.cli",
+            "build-dataset",
+            "--source",
+            "fatura",
+            "--repo-root",
+            str(tmp_path / "workbench"),
+            "--out",
+            str(tmp_path / "out"),
+            "--no-download",
+        ],
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+    assert result.returncode != 0
+    assert "PUBLIC_INVOICE_PIPELINE_ZIP" in result.stderr

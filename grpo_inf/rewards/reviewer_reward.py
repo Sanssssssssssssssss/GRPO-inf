@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from grpo_inf.rewards.context import oracle_from_sample, parse_payload, payload_from_sample
+from grpo_inf.rewards.context import extract_payload_from_prompt, oracle_from_sample, parse_payload, payload_from_sample
 from grpo_inf.rewards.extract_reward import score_extract_result
 from grpo_inf.rewards.review_reward import score_review_result
 from grpo_inf.rewards.system_contract_reward import score_system_contract
@@ -84,7 +84,7 @@ def reward_func(completions: list[Any], **kwargs: Any) -> list[float]:
     for index, completion in enumerate(completions):
         oracle = oracles[index] if isinstance(oracles, list) and index < len(oracles) and isinstance(oracles[index], dict) else {}
         raw_payload = payloads[index] if isinstance(payloads, list) and index < len(payloads) else {}
-        payload = parse_payload(raw_payload)
+        payload = parse_payload(raw_payload) or extract_payload_from_prompt(raw_payload)
         docs = documents[index] if isinstance(documents, list) and index < len(documents) and isinstance(documents[index], list) else []
         scores.append(score_completion(completion, oracle, docs, payload)["total"])
     return scores

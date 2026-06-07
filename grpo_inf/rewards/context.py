@@ -43,21 +43,26 @@ def parse_payload(value: Any) -> dict[str, Any]:
     return {}
 
 
+def extract_payload_from_prompt(prompt: Any) -> dict[str, Any]:
+    if isinstance(prompt, str):
+        return parse_payload(prompt)
+    if isinstance(prompt, list):
+        for item in reversed(prompt):
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            payload = parse_payload(content)
+            if payload:
+                return payload
+    return {}
+
+
 def payload_from_sample(sample: dict[str, Any]) -> dict[str, Any]:
     for key in ("payload", "input", "prompt_payload"):
         payload = parse_payload(sample.get(key))
         if payload:
             return payload
-    prompt = sample.get("prompt")
-    if isinstance(prompt, str):
-        return parse_payload(prompt)
-    if isinstance(prompt, list):
-        for item in reversed(prompt):
-            if isinstance(item, dict) and item.get("role") == "user":
-                payload = parse_payload(item.get("content"))
-                if payload:
-                    return payload
-    return {}
+    return extract_payload_from_prompt(sample.get("prompt"))
 
 
 def oracle_from_sample(sample: dict[str, Any]) -> dict[str, Any]:

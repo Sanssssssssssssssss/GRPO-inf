@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import shutil
 import subprocess
 import sys
@@ -12,9 +13,7 @@ from typing import Any, Iterable
 
 from grpo_inf.data.audit import audit_dataset
 from grpo_inf.io import DatasetReader, read_jsonl, write_json, write_jsonl
-
-
-DEFAULT_PIPELINE_ZIP = Path("C:/Users/X/Downloads/invoice_reviewer_public_invoice_pipeline_v2.zip")
+from grpo_inf.rewards.context import extract_payload_from_prompt, parse_payload
 
 
 def _case_id(row: dict[str, Any]) -> str:
@@ -44,12 +43,22 @@ def _canonical_sft_row(row: dict[str, Any]) -> dict[str, Any]:
     return {"case_id": _case_id(row), "messages": row.get("messages", [])}
 
 
+def _input_from_row(row: dict[str, Any]) -> dict[str, Any]:
+    for key in ("input", "payload"):
+        value = parse_payload(row.get(key))
+        if value:
+            return value
+    return extract_payload_from_prompt(row.get("prompt"))
+
+
 def _canonical_grpo_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "case_id": _case_id(row),
         "split": row.get("split"),
         "prompt": row.get("prompt"),
+        "input": _input_from_row(row),
         "gold": row.get("gold") or row.get("answer") or row.get("expected_answer"),
+        "documents": row.get("documents", []),
         "reward_metadata": row.get("reward_metadata") or row.get("source") or {},
     }
 
@@ -101,7 +110,7 @@ def _find_pipeline_zip(pipeline_zip: str | Path | None) -> Path:
     elif os.environ.get("PUBLIC_INVOICE_PIPELINE_ZIP"):
         path = Path(os.environ["PUBLIC_INVOICE_PIPELINE_ZIP"])
     else:
-        path = DEFAULT_PIPELINE_ZIP
+        raise FileNotFoundError("Set PUBLIC_INVOICE_PIPELINE_ZIP or pass --pipeline-zip for --source fatura.")
     if not path.exists():
         raise FileNotFoundError(
             f"public invoice pipeline zip not found: {path}. Set PUBLIC_INVOICE_PIPELINE_ZIP or pass --pipeline-zip."
@@ -147,8 +156,50 @@ def _run_pipeline_zip(
         subprocess.run(cmd, check=True, cwd=str(script.parent.parent))
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _stable_source_metadata(row: dict[str, Any], dataset_root: Path) -> dict[str, Any]:
+    source = row.get("source") if isinstance(row.get("source"), dict) else {}
+    image_ref = str(source.get("image") or "")
+    image_path = Path(image_ref)
+    if image_ref and not image_path.is_absolute():
+        image_path = dataset_root / image_ref
+    image_sha = _sha256_file(image_path) if image_ref and image_path.exists() else ""
+    raw_id = str(source.get("source_id") or source.get("image") or row.get("case_id") or "").strip()
+    stable_id = f"fatura_{image_sha[:16]}" if image_sha else f"fatura_{raw_id}"
+    return {
+        "source": {
+            **source,
+            "stable_source_id": stable_id,
+            "source_dataset": source.get("dataset") or "FATURA",
+            "source_image_sha256": image_sha,
+        }
+    }
+
+
+def _rewrite_fatura_grpo_rows(out: Path) -> None:
+    for split in ("train", "dev", "test_locked"):
+        path = out / "grpo" / f"prompts_{split}.jsonl"
+        if not path.exists():
+            continue
+        rows = []
+        for row in read_jsonl(path):
+            canonical = _canonical_grpo_row(row)
+            canonical["split"] = split
+            canonical["reward_metadata"] = _stable_source_metadata(row, out)
+            rows.append(canonical)
+        write_jsonl(path, rows)
+
+
 def _canonicalize_fatura_output(out_dir: str | Path, target_cases: int) -> dict[str, Any]:
     out = Path(out_dir)
+    _rewrite_fatura_grpo_rows(out)
     _copy_if_exists(out / "sft/reviewer_extract_sft.jsonl", out / "sft/reviewer_train.jsonl")
     _copy_if_exists(out / "splits/test_locked.jsonl", out / "eval/locked_cases.jsonl")
     _copy_if_exists(out / "case_inputs/reviewer_extract_payloads.jsonl", out / "system_call/reviewer_extract_payloads.jsonl")

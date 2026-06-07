@@ -36,7 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--repo-root", help="invoice-case-workbench-openai-sdk checkout for Fatura builds")
     build.add_argument("--out", required=True)
     build.add_argument("--input-zip", help="public_review_500_v2 zip for zip-smoke imports")
-    build.add_argument("--pipeline-zip", help="public invoice pipeline zip; defaults to PUBLIC_INVOICE_PIPELINE_ZIP or Downloads path")
+    build.add_argument("--pipeline-zip", help="public invoice pipeline zip; required unless PUBLIC_INVOICE_PIPELINE_ZIP is set")
     build.add_argument("--fatura-zip", help="Existing FATURA.zip path")
     build.add_argument("--no-download", action="store_true", help="Do not download FATURA inside the pipeline")
 

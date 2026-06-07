@@ -182,6 +182,22 @@ def _source_identity(row: dict[str, Any]) -> str:
     return sorted(source_ids)[0]
 
 
+def _strict_source_identity(row: dict[str, Any]) -> tuple[str, list[str]]:
+    metadata = row.get("reward_metadata")
+    source = metadata.get("source") if isinstance(metadata, dict) and isinstance(metadata.get("source"), dict) else {}
+    stable_source_id = str(source.get("stable_source_id") or "").strip()
+    source_image_sha256 = str(source.get("source_image_sha256") or "").strip()
+    source_dataset = str(source.get("source_dataset") or "").strip()
+    errors: list[str] = []
+    if not stable_source_id:
+        errors.append(f"{_case_id(row)}: reward_metadata.source.stable_source_id is required in strict audit")
+    if not source_image_sha256:
+        errors.append(f"{_case_id(row)}: reward_metadata.source.source_image_sha256 is required in strict audit")
+    if not source_dataset:
+        errors.append(f"{_case_id(row)}: reward_metadata.source.source_dataset is required in strict audit")
+    return source_image_sha256 or stable_source_id, errors
+
+
 def audit_dataset(
     dataset_path: str | Path,
     output: str | Path | None = None,
@@ -242,7 +258,11 @@ def audit_dataset(
         quote_hit += q_hit
         report["validation_errors_sample"].extend(q_errors)
         report["warnings"].extend(q_warnings[:10])
-        source_id = _source_identity(row)
+        if strict_split_source_uniqueness:
+            source_id, strict_source_errors = _strict_source_identity(row)
+            report["validation_errors_sample"].extend(strict_source_errors)
+        else:
+            source_id = _source_identity(row)
         if source_id:
             source_splits[source_id].add(split)
         else:

@@ -8,6 +8,9 @@ from grpo_inf.training.common import dry_run_summary, prepare_training_run
 from grpo_inf.training.config import load_config
 
 
+REPO_LOCAL_GRPO_KEYS = {"notes"}
+
+
 def _trl_reward(completions: list[Any], **kwargs: Any) -> list[float]:
     return reward_func(completions, **kwargs)
 
@@ -26,7 +29,7 @@ def run_grpo(config_path: str, run_id: str | None = None, execute: bool = False)
 
     dataset = load_dataset("json", data_files=config["data_path"], split="train")
     peft_config = LoraConfig(**config.get("lora", {})) if config.get("lora") else None
-    grpo_args = dict(config["grpo"])
+    grpo_args = {key: value for key, value in dict(config["grpo"]).items() if key not in REPO_LOCAL_GRPO_KEYS}
     grpo_args.setdefault("output_dir", str(paths["checkpoints"]))
     grpo_args.setdefault("bf16", bool(config.get("bf16", True)))
     grpo_args.setdefault("report_to", config.get("report_to", "none"))

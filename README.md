@@ -34,6 +34,11 @@ Formal public invoice training data must be built with strict split source
 uniqueness. If public source coverage is insufficient, the builder fails closed
 instead of fabricating cases.
 
+Strict audit requires every GRPO row to carry
+`reward_metadata.source.stable_source_id`, `source_dataset`, and
+`source_image_sha256`; split uniqueness is checked from those stable identifiers,
+not temporary paths, attachment IDs, or filenames.
+
 This public repo commits only code, schemas, configs, and tiny fixtures. Keep
 full datasets, zips, checkpoints, adapters, model caches, Slurm logs, and
 `outputs/` out of git.
@@ -68,6 +73,7 @@ py -3 -m grpo_inf.cli build-dataset `
   --source fatura `
   --target-cases 500 `
   --repo-root ..\invoice-case-workbench-openai-sdk `
+  --pipeline-zip C:\path\to\invoice_reviewer_public_invoice_pipeline_v2.zip `
   --out data\invoice_reviewer_public_500
 ```
 
