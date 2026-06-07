@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Local data and model artifacts
+data/
+datasets/
+*.zip
+*.tar
+*.tar.gz
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+outputs/
+checkpoints/
+adapter/
+wandb/
+.cache/
+.hf_cache/
+huggingface/
+
+# Slurm and logs
+slurm-*.out
+*.log
+
+# Secrets
+.env
+*.env.local
+secrets/

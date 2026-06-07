@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpo-inf"
+version = "0.1.0"
+description = "Clean GRPO infrastructure for invoice evidence reviewer training."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sanssssssssssssssss" }]
+dependencies = [
+  "jsonschema>=4.22",
+]
+
+[project.optional-dependencies]
+viz = ["plotly>=5.22"]
+train = [
+  "accelerate>=0.34",
+  "bitsandbytes>=0.43",
+  "datasets>=2.20",
+  "peft>=0.12",
+  "torch>=2.4",
+  "transformers>=4.56",
+  "trl>=0.29",
+]
+dev = [
+  "pytest>=8.2",
+  "plotly>=5.22",
+]
+
+[project.scripts]
+grpo-inf = "grpo_inf.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["grpo_inf*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

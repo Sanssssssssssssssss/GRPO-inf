@@ -1,0 +1,35 @@
+{
+  "model_id": "google/gemma-4-12B-it",
+  "data_path": "${DATA_ROOT}/grpo/prompts_train.jsonl",
+  "output_root": "outputs",
+  "bf16": true,
+  "report_to": "none",
+  "lora": {
+    "task_type": "CAUSAL_LM",
+    "r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "bias": "none",
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+  },
+  "grpo": {
+    "num_generations": 4,
+    "max_prompt_length": 4096,
+    "max_completion_length": 768,
+    "learning_rate": 0.000001,
+    "beta": 0.01,
+    "loss_type": "dr_grpo",
+    "scale_rewards": "batch",
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "max_steps": 500,
+    "logging_steps": 10,
+    "save_steps": 100,
+    "save_total_limit": 2,
+    "use_vllm": false,
+    "gradient_checkpointing": true,
+    "log_completions": true
+  }
+}
