@@ -43,6 +43,32 @@ This public repo commits only code, schemas, configs, and tiny fixtures. Keep
 full datasets, zips, checkpoints, adapters, model caches, Slurm logs, and
 `outputs/` out of git.
 
+## Published Dataset
+
+The strict synthetic EvidenceReviewResult seed dataset is published as a GitHub
+Release asset, not committed into git history:
+
+- Release: <https://github.com/Sanssssssssssssssss/GRPO-inf/releases/tag/strict-evr-720-v1>
+- Direct download: <https://github.com/Sanssssssssssssssss/GRPO-inf/releases/download/strict-evr-720-v1/invoice_reviewer_grpo_strict_evr_720_v1.zip>
+- File: `invoice_reviewer_grpo_strict_evr_720_v1.zip`
+- SHA256: `9C19E05D5190455FEF29698979118E6E840AEECD74CA10A88A10DA5846215C88`
+- Cases: 720 total; train 576, dev 72, test_locked 72
+- Modes: 500 review, 220 extract
+- Quality gates: `valid=true`, `schema_valid_rate=1.0`,
+  `quote_hit_rate=1.0`, `split_source_overlap_count=0`
+
+After download, unzip it outside the repo and point training at the extracted
+dataset root:
+
+```powershell
+Expand-Archive .\invoice_reviewer_grpo_strict_evr_720_v1.zip -DestinationPath D:\datasets
+$env:DATA_ROOT = "D:\datasets\invoice_reviewer_grpo_strict_evr_720_v1"
+py -3 -m grpo_inf.cli audit-dataset `
+  --data $env:DATA_ROOT `
+  --strict-split-source-uniqueness `
+  --min-cases 720
+```
+
 ## Quick Start
 
 ```powershell
