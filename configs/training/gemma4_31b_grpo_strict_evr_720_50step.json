@@ -1,0 +1,61 @@
+{
+  "model_id": "${MODEL_DIR}",
+  "data_path": "${DATA_ROOT}/grpo/prompts_train.jsonl",
+  "eval_data_path": "${DATA_ROOT}/grpo/prompts_dev.jsonl",
+  "output_root": "${OUTPUT_ROOT}",
+  "notes": "CSD3 conservative 50-step GRPO run for invoice_reviewer_grpo_strict_evr_720_v1. This should only run after the matching 3-step canary succeeds. It keeps max_completion_length short to avoid the 512-token run's impractical runtime and uses reentrant gradient checkpointing to avoid the no-checkpoint OOM.",
+  "metadata": {
+    "dataset_name": "invoice_reviewer_grpo_strict_evr_720_v1",
+    "dataset_version": "strict_evr_720_v1",
+    "release_url": "https://github.com/Sanssssssssssssssss/GRPO-inf/releases/download/strict-evr-720-v1/invoice_reviewer_grpo_strict_evr_720_v1.zip",
+    "zip_sha256": "9c19e05d5190455fef29698979118e6e840aeecd74ca10a88a10da5846215c88",
+    "case_count": 720,
+    "train_cases": 576,
+    "dev_cases": 72,
+    "test_locked_cases": 72,
+    "mode_counts": {
+      "review": 500,
+      "extract": 220
+    },
+    "max_steps": 50,
+    "conservative_run": true
+  },
+  "bf16": true,
+  "report_to": "none",
+  "lora": {
+    "task_type": "CAUSAL_LM",
+    "r": 32,
+    "lora_alpha": 64,
+    "lora_dropout": 0.05,
+    "bias": "none",
+    "target_modules": "model\\.language_model\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))"
+  },
+  "grpo": {
+    "model_init_kwargs": {
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa"
+    },
+    "num_generations": 2,
+    "max_completion_length": 64,
+    "generation_batch_size": 4,
+    "learning_rate": 0.000001,
+    "beta": 0.01,
+    "loss_type": "dr_grpo",
+    "scale_rewards": "batch",
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "max_steps": 50,
+    "logging_steps": 1,
+    "save_steps": 5,
+    "save_total_limit": 5,
+    "use_vllm": false,
+    "ds3_gather_for_generation": false,
+    "gradient_checkpointing": true,
+    "gradient_checkpointing_kwargs": {
+      "use_reentrant": true
+    },
+    "log_completions": true
+  }
+}

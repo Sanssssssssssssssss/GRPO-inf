@@ -214,6 +214,8 @@ def _canonicalize_fatura_output(out_dir: str | Path, target_cases: int) -> dict[
         strict_split_source_uniqueness=True,
         smoke_seed=False,
         min_cases=target_cases,
+        require_extract_only=True,
+        require_public_source_metadata=True,
     )
     if not audit.get("valid"):
         raise RuntimeError(f"strict audit failed for {out}: {audit['validation_errors_sample'][:5]}")

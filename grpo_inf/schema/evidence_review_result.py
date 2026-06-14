@@ -193,6 +193,7 @@ EVIDENCE_REVIEW_RESULT_SCHEMA: dict[str, Any] = {
 
 REVIEWER_ANSWER_SCHEMA = EVIDENCE_REVIEW_RESULT_SCHEMA
 SCHEMA_VALIDATOR = Draft202012Validator(REVIEWER_ANSWER_SCHEMA)
+WRAPPER_KEYS = ("evidence_review_result", "result", "answer")
 
 
 def normalize_completion_text(completion: Any) -> str:
@@ -219,6 +220,9 @@ def normalize_completion_text(completion: Any) -> str:
 def strip_wrappers(text: str) -> tuple[str, list[str]]:
     errors: list[str] = []
     value = text.strip()
+    if re.match(r"(?is)^thought\s*\n", value):
+        errors.append("gemma_thought_channel_prefix")
+        value = re.sub(r"(?is)^thought\s*\n", "", value, count=1).strip()
     if re.search(r"<\|?think\|?>|</\|?think\|?>|<think>|</think>", value, re.IGNORECASE):
         errors.append("thought_tag_leak")
         value = re.sub(r"(?is)<\|?think\|?>.*?</\|?think\|?>", "", value).strip()
@@ -230,16 +234,52 @@ def strip_wrappers(text: str) -> tuple[str, list[str]]:
     return value, errors
 
 
+def _recover_first_json_object(text: str) -> tuple[dict[str, Any] | None, list[str]]:
+    start = text.find("{")
+    if start < 0:
+        return None, ["json_no_object_start"]
+    errors: list[str] = []
+    prefix = text[:start].strip()
+    if prefix:
+        errors.append("json_prefix_text")
+    try:
+        parsed, end = json.JSONDecoder().raw_decode(text[start:])
+    except Exception as exc:  # pragma: no cover - exact parser text varies
+        return None, [*errors, f"json_recovery_error:{exc}"]
+    if not isinstance(parsed, dict):
+        return None, [*errors, "json_not_object"]
+    trailing = text[start + end :].strip()
+    if trailing:
+        errors.append("json_trailing_text")
+    errors.append("json_recovered_first_object")
+    return parsed, errors
+
+
+def _unwrap_common_result_wrapper(parsed: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    if len(parsed) != 1:
+        return parsed, []
+    key = next(iter(parsed))
+    value = parsed[key]
+    if key in WRAPPER_KEYS and isinstance(value, dict):
+        return value, [f"json_wrapper:{key}"]
+    return parsed, []
+
+
 def parse_reviewer_json(completion: Any) -> tuple[dict[str, Any] | None, list[str], str]:
     raw = normalize_completion_text(completion)
     cleaned, errors = strip_wrappers(raw)
     try:
         parsed = json.loads(cleaned)
     except Exception as exc:  # pragma: no cover - exact parser text varies
-        return None, [*errors, f"json_parse_error:{exc}"], cleaned
+        recovered, recovery_errors = _recover_first_json_object(cleaned)
+        if recovered is None:
+            return None, [*errors, f"json_parse_error:{exc}", *recovery_errors], cleaned
+        unwrapped, wrapper_errors = _unwrap_common_result_wrapper(recovered)
+        return unwrapped, [*errors, f"json_parse_error:{exc}", *recovery_errors, *wrapper_errors], cleaned
     if not isinstance(parsed, dict):
         return None, [*errors, "json_not_object"], cleaned
-    return parsed, errors, cleaned
+    unwrapped, wrapper_errors = _unwrap_common_result_wrapper(parsed)
+    return unwrapped, [*errors, *wrapper_errors], cleaned
 
 
 def schema_errors(obj: dict[str, Any]) -> list[str]:

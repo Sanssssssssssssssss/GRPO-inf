@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import statistics
+import json
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -13,10 +14,24 @@ from grpo_inf.rewards.context import (
     source_aliases_from_payload,
     source_ids_from_source_metadata,
 )
+from grpo_inf.rewards.reviewer_reward import score_sample_completion
 from grpo_inf.schema import schema_errors
 
 
 METADATA_FIELDS_WITHOUT_QUOTES = {"source_doc_id", "source_locator", "document_confidence"}
+GOLD_SCORE_TOTAL_MEAN_MIN = 0.95
+GOLD_SCORE_TOTAL_MIN_MIN = 0.85
+FORMAL_SOURCE_IMAGE_FIELDS = ("image", "image_path", "source_image", "source_image_path", "original_ref", "path")
+FORMAL_ANNOTATION_FIELDS = (
+    "annotation",
+    "annotation_ref",
+    "annotation_path",
+    "annotation_source",
+    "source_annotation",
+    "public_annotation_ref",
+    "label",
+    "label_ref",
+)
 
 
 def _percentile(values: list[int], percentile: float) -> float:
@@ -198,6 +213,30 @@ def _strict_source_identity(row: dict[str, Any]) -> tuple[str, list[str]]:
     return source_image_sha256 or stable_source_id, errors
 
 
+def _public_source_metadata_errors(row: dict[str, Any]) -> list[str]:
+    metadata = row.get("reward_metadata")
+    source = metadata.get("source") if isinstance(metadata, dict) and isinstance(metadata.get("source"), dict) else {}
+    errors: list[str] = []
+    if not any(str(source.get(key) or "").strip() for key in FORMAL_SOURCE_IMAGE_FIELDS):
+        errors.append(f"{_case_id(row)}: public source image metadata is required")
+    if not any(source.get(key) for key in FORMAL_ANNOTATION_FIELDS):
+        errors.append(f"{_case_id(row)}: public annotation metadata is required")
+    return errors
+
+
+def _gold_self_score(rows: list[dict[str, Any]]) -> dict[str, float]:
+    scores = [score_sample_completion(json.dumps(oracle_from_sample(row), ensure_ascii=False), row) for row in rows]
+    totals = [float(score["total"]) for score in scores]
+    schema_valid = [float(score["schema_valid"]) for score in scores]
+    quote_hits = [float(score["quote_hit_rate"]) for score in scores]
+    return {
+        "exact_gold_total_mean": statistics.mean(totals) if totals else 1.0,
+        "exact_gold_total_min": min(totals) if totals else 1.0,
+        "exact_gold_schema_valid_rate": statistics.mean(schema_valid) if schema_valid else 1.0,
+        "exact_gold_quote_hit_rate": statistics.mean(quote_hits) if quote_hits else 1.0,
+    }
+
+
 def audit_dataset(
     dataset_path: str | Path,
     output: str | Path | None = None,
@@ -205,11 +244,15 @@ def audit_dataset(
     strict_split_source_uniqueness: bool = False,
     smoke_seed: bool = False,
     min_cases: int | None = None,
+    require_extract_only: bool = False,
+    require_public_source_metadata: bool = False,
 ) -> dict[str, Any]:
     report: dict[str, Any] = {
         "dataset_path": str(dataset_path),
         "schema": schema_name,
         "strict_split_source_uniqueness": strict_split_source_uniqueness,
+        "require_extract_only": require_extract_only,
+        "require_public_source_metadata": require_public_source_metadata,
         "smoke_seed": smoke_seed,
         "not_for_final_training": bool(smoke_seed),
         "total_cases": 0,
@@ -227,6 +270,20 @@ def audit_dataset(
         rows = load_evidence_review_rows(reader)
 
     report["total_cases"] = len(rows)
+    gold_scores = _gold_self_score(rows)
+    report.update(gold_scores)
+    if gold_scores["exact_gold_total_mean"] < GOLD_SCORE_TOTAL_MEAN_MIN:
+        report["validation_errors_sample"].append(
+            f"exact_gold_total_mean {gold_scores['exact_gold_total_mean']:.4f} is below {GOLD_SCORE_TOTAL_MEAN_MIN}"
+        )
+    if gold_scores["exact_gold_total_min"] < GOLD_SCORE_TOTAL_MIN_MIN:
+        report["validation_errors_sample"].append(
+            f"exact_gold_total_min {gold_scores['exact_gold_total_min']:.4f} is below {GOLD_SCORE_TOTAL_MIN_MIN}"
+        )
+    if gold_scores["exact_gold_schema_valid_rate"] != 1.0:
+        report["validation_errors_sample"].append("exact_gold_schema_valid_rate must equal 1.0")
+    if gold_scores["exact_gold_quote_hit_rate"] != 1.0:
+        report["validation_errors_sample"].append("exact_gold_quote_hit_rate must equal 1.0")
     if min_cases is not None and len(rows) < min_cases:
         report["validation_errors_sample"].append(f"case_count {len(rows)} is below required minimum {min_cases}")
 
@@ -244,6 +301,8 @@ def audit_dataset(
         gold = oracle_from_sample(row)
         mode = str(gold.get("mode") or payload_from_sample(row).get("mode") or "unknown")
         report["mode_counts"][mode] = report["mode_counts"].get(mode, 0) + 1
+        if require_extract_only and mode != "extract":
+            report["validation_errors_sample"].append(f"{cid}: formal FATURA training rows must be mode=extract, got {mode}")
         scenario = str(row.get("scenario") or "unknown")
         report["scenario_counts"][scenario] = report["scenario_counts"].get(scenario, 0) + 1
         if prompt_text(row):
@@ -263,6 +322,8 @@ def audit_dataset(
             report["validation_errors_sample"].extend(strict_source_errors)
         else:
             source_id = _source_identity(row)
+        if require_public_source_metadata:
+            report["validation_errors_sample"].extend(_public_source_metadata_errors(row))
         if source_id:
             source_splits[source_id].add(split)
         else:

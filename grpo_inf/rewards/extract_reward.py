@@ -13,6 +13,50 @@ from grpo_inf.rewards.context import (
 )
 
 
+EXECUTIVE_PAYMENT_PHRASES = (
+    "已付款",
+    "已批准付款",
+    "approve payment",
+    "approved for payment",
+    "mark as paid",
+    "submit to erp",
+    "提交 erp",
+    "提交erp",
+)
+
+PAYMENT_NEGATION_MARKERS = (
+    "not ",
+    "no ",
+    "do not ",
+    "don't ",
+    "does not ",
+    "cannot ",
+    "without ",
+    "不",
+    "未",
+    "不要",
+    "不能",
+    "不做",
+    "不判断",
+)
+
+
+def _has_executive_payment_conclusion(value: Any) -> bool:
+    lowered = str(value).lower()
+    normalized = " ".join(lowered.split())
+    for phrase in EXECUTIVE_PAYMENT_PHRASES:
+        start = 0
+        while True:
+            index = normalized.find(phrase, start)
+            if index == -1:
+                break
+            prefix = normalized[max(0, index - 24) : index]
+            if not any(marker in prefix for marker in PAYMENT_NEGATION_MARKERS):
+                return True
+            start = index + len(phrase)
+    return False
+
+
 def score_extract_result(pred: dict[str, Any], gold: dict[str, Any], payload: dict[str, Any], documents: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     text = context_text(payload, documents)
     source_aliases = source_aliases_from_payload(payload)
@@ -53,8 +97,7 @@ def score_extract_result(pred: dict[str, Any], gold: dict[str, Any], payload: di
         penalty -= 0.12
     if pred.get("mode") == "extract" and add_evidence:
         penalty -= 0.20
-    lowered = str(pred).lower()
-    if "approve payment" in lowered or "付款" in lowered or "mark as paid" in lowered:
+    if _has_executive_payment_conclusion(pred):
         penalty -= 0.15
 
     return {

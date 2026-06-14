@@ -13,6 +13,9 @@ from grpo_inf.rewards.context import (
 )
 
 
+CLASSIFICATION_PATCH_EXEMPTIONS = {"process_only", "weak", "wrong_workflow"}
+
+
 def _support_keys(result: dict[str, Any]) -> set[str]:
     keys: set[str] = set()
     for item in result.get("supports") or []:
@@ -36,7 +39,45 @@ def _conflict_keys(result: dict[str, Any]) -> set[str]:
     return keys
 
 
-def score_review_result(pred: dict[str, Any], gold: dict[str, Any], payload: dict[str, Any], documents: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def _metadata_classification(metadata: dict[str, Any] | None, payload: dict[str, Any]) -> str:
+    candidates = []
+    if isinstance(metadata, dict):
+        candidates.append(metadata)
+    for key in ("metadata", "reward_metadata"):
+        value = payload.get(key)
+        if isinstance(value, dict):
+            candidates.append(value)
+    for candidate in candidates:
+        value = candidate.get("classification")
+        if isinstance(value, dict):
+            value = value.get("label") or value.get("name") or value.get("class")
+        text = normalize_scalar(value)
+        if text:
+            return text
+    return ""
+
+
+def _should_penalize_unsupported_add_evidence(
+    pred: dict[str, Any],
+    gold: dict[str, Any],
+    payload: dict[str, Any],
+    metadata: dict[str, Any] | None,
+) -> bool:
+    if gold.get("support_level") != "none":
+        return False
+    patch = pred.get("suggested_patch") if isinstance(pred.get("suggested_patch"), dict) else {}
+    if not patch.get("add_evidence"):
+        return False
+    return _metadata_classification(metadata, payload) not in CLASSIFICATION_PATCH_EXEMPTIONS
+
+
+def score_review_result(
+    pred: dict[str, Any],
+    gold: dict[str, Any],
+    payload: dict[str, Any],
+    documents: list[dict[str, Any]] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     text = context_text(payload, documents)
     aliases = source_aliases_from_payload(payload)
     source_doc_id = str(pred.get("source_doc_id") or "")
@@ -69,7 +110,7 @@ def score_review_result(pred: dict[str, Any], gold: dict[str, Any], payload: dic
     penalty = -min(0.25, hallucinated_quotes * 0.05)
     if source_doc_valid == 0.0:
         penalty -= 0.12
-    if gold.get("support_level") in {"none", "partial"} and pred.get("should_accept") is True:
+    if _should_penalize_unsupported_add_evidence(pred, gold, payload, metadata):
         penalty -= 0.30
 
     return {

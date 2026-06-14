@@ -4,7 +4,10 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+
+from grpo_inf.training.grpo import _grpo_config_args, _set_tokenizer_eos_token_id
 
 
 def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
@@ -79,6 +82,43 @@ def test_default_grpo_config_has_no_repo_only_keys_in_grpo_block() -> None:
     config = json.loads(Path("configs/training/gemma4_31b_grpo.json").read_text(encoding="utf-8"))
     assert "notes" in config
     assert "notes" not in config["grpo"]
+
+
+def test_grpo_execute_filters_non_grpo_config_keys() -> None:
+    @dataclass
+    class DummyGRPOConfig:
+        max_steps: int = 1
+        generation_kwargs: dict | None = None
+
+    assert _grpo_config_args(
+        {
+            "max_steps": 1,
+            "notes": "local",
+            "unknown": True,
+            "generation_kwargs": {"eos_token_id": [1, 106]},
+        },
+        DummyGRPOConfig,
+    ) == {"max_steps": 1, "generation_kwargs": {"eos_token_id": [1, 106]}}
+
+
+
+
+def test_grpo_tokenizer_eos_override_uses_eot_token() -> None:
+    class DummyTokenizer:
+        eos_token = "<eos>"
+        eos_token_id = 1
+        unk_token = "<unk>"
+
+        def convert_ids_to_tokens(self, token_id: int) -> str:
+            return {1: "<eos>", 106: "<turn|>"}[token_id]
+
+    class DummyProcessor:
+        tokenizer = DummyTokenizer()
+
+    processor = DummyProcessor()
+    _set_tokenizer_eos_token_id(processor, 106)
+    assert processor.tokenizer.eos_token == "<turn|>"
+    assert processor.tokenizer.eos_token_id == 106
 
 
 def test_print_schema_cli(tmp_path: Path) -> None:

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 
 from grpo_inf.rewards.reviewer_reward import score_completion
+from grpo_inf.schema import schema_errors
+from tools.build_slim_evr_dataset import slim_evr
 
 
 PAYLOAD = {
@@ -114,9 +116,36 @@ def test_review_completion_scores_high() -> None:
     assert score["should_accept_correct"] == 1.0
 
 
-def test_invalid_json_is_hard_fail() -> None:
+def test_review_partial_accept_is_not_blanket_penalized_when_gold_matches() -> None:
+    gold = json.loads(dumps(REVIEW_GOLD))
+    gold["support_level"] = "partial"
+    gold["should_accept"] = True
+    score = score_completion(dumps(gold), gold, payload=REVIEW_PAYLOAD)
+    assert score["should_accept_correct"] == 1.0
+    assert score["review_penalty"] == 0.0
+    assert score["total"] > 0.95
+
+
+def test_review_none_add_evidence_penalty_respects_classification_exemptions() -> None:
+    gold = json.loads(dumps(REVIEW_GOLD))
+    gold["support_level"] = "none"
+    gold["should_accept"] = False
+    gold["supports"] = []
+    gold["evidence_cards"] = []
+    gold["suggested_patch"]["add_evidence"] = []
+    pred = json.loads(dumps(gold))
+    pred["suggested_patch"]["add_evidence"] = [{"id": "unsupported"}]
+
+    score = score_completion(dumps(pred), gold, payload=REVIEW_PAYLOAD, metadata={"classification": "strong"})
+    assert score["review_penalty"] <= -0.30
+
+    exempt = score_completion(dumps(pred), gold, payload=REVIEW_PAYLOAD, metadata={"classification": "weak"})
+    assert exempt["review_penalty"] == 0.0
+
+
+def test_invalid_json_is_shaped_fail_not_constant_hard_fail() -> None:
     score = score_completion("not json", EXTRACT_GOLD, payload=PAYLOAD)
-    assert score["total"] == -1.0
+    assert -0.55 <= score["total"] <= -0.20
     assert score["json_valid"] == 0.0
 
 
@@ -124,7 +153,7 @@ def test_schema_invalid_caps_score_and_extra_fields_fail() -> None:
     bad = {**EXTRACT_GOLD, "decision": "approve"}
     score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
     assert score["schema_valid"] == 0.0
-    assert score["total"] <= 0.2
+    assert score["total"] <= 0.35
 
 
 def test_missing_quote_penalizes_grounding() -> None:
@@ -148,6 +177,18 @@ def test_extract_mode_forbids_add_evidence() -> None:
     score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
     assert score["forbidden_patch_rate"] == 1.0
     assert score["extract_penalty"] < 0.0
+
+
+def test_extract_payment_penalty_only_hits_executive_payment_conclusions() -> None:
+    safe = json.loads(dumps(EXTRACT_GOLD))
+    safe["reply_to_user"] = "Not reviewing payment readiness; 不做付款审查；不判断付款条件。"
+    safe_score = score_completion(dumps(safe), EXTRACT_GOLD, payload=PAYLOAD)
+    assert safe_score["extract_penalty"] == 0.0
+
+    bad = json.loads(dumps(EXTRACT_GOLD))
+    bad["reply_to_user"] = "已批准付款 and submit to ERP."
+    bad_score = score_completion(dumps(bad), EXTRACT_GOLD, payload=PAYLOAD)
+    assert bad_score["extract_penalty"] <= -0.15
 
 
 def test_review_risk_conflict_scoring() -> None:
@@ -187,3 +228,70 @@ def test_thought_and_markdown_wrappers_parse_but_penalize() -> None:
     assert score["thought_leak"] == 1.0
     assert score["markdown_fence"] == 1.0
     assert score["total"] < score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD)["total"]
+
+
+def test_gemma_thought_channel_prefix_is_cleaned_as_template_noise() -> None:
+    score = score_completion("thought\n" + dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["json_valid"] == 1.0
+    assert score["schema_valid"] == 1.0
+    assert score["gemma_thought_channel_prefix"] == 1.0
+    assert score["total"] > 0.90
+
+
+def test_wrapper_json_is_recovered_but_capped() -> None:
+    wrapped = dumps({"evidence_review_result": EXTRACT_GOLD})
+    score = score_completion(wrapped, EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["json_valid"] == 1.0
+    assert score["schema_valid"] == 1.0
+    assert score["contract_valid"] == 0.0
+    assert score["wrapper_seen"] == 1.0
+    assert score["total"] <= 0.15
+
+
+def test_repeated_json_is_recovered_but_capped() -> None:
+    repeated = dumps(EXTRACT_GOLD) + "\n" + dumps(EXTRACT_GOLD)
+    score = score_completion(repeated, EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["json_valid"] == 1.0
+    assert score["schema_valid"] == 1.0
+    assert score["trailing_extra"] == 1.0
+    assert score["recovered_first_json"] == 1.0
+    assert score["total"] <= 0.15
+
+
+def test_truncated_json_gets_recoverable_shape_not_full_reward() -> None:
+    truncated = dumps(EXTRACT_GOLD)[:200]
+    score = score_completion(truncated, EXTRACT_GOLD, payload=PAYLOAD)
+    assert score["json_valid"] == 0.0
+    assert -0.55 <= score["total"] <= -0.20
+
+
+def test_tool_response_token_is_not_treated_as_gemma4_eos() -> None:
+    score = score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD, completion_ids=[10, 50])
+    assert score["eos_terminated"] == 0.0
+    assert score["truncated_completion"] == 1.0
+    assert score["total"] <= 0.08
+
+
+def test_eot_token_counts_as_gemma4_eos() -> None:
+    score = score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD, completion_ids=[10, 106])
+    assert score["eos_terminated"] == 1.0
+    assert score["truncated_completion"] == 0.0
+    assert score["total"] > 0.95
+
+
+def test_overlength_completion_receives_continuous_penalty() -> None:
+    normal = score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD, completion_ids=[106])
+    long = score_completion(dumps(EXTRACT_GOLD), EXTRACT_GOLD, payload=PAYLOAD, completion_ids=[7] * 1400 + [106])
+    assert long["length_penalty"] < 0.0
+    assert long["total"] < normal["total"]
+
+
+def test_slim_evr_gold_remains_schema_valid_and_high_reward() -> None:
+    slim = slim_evr(REVIEW_GOLD)
+    assert schema_errors(slim) == []
+    score = score_completion(dumps(slim), slim, payload=REVIEW_PAYLOAD)
+    assert score["total"] > 0.95
+    assert score["schema_valid"] == 1.0
+    assert score["quote_hit_rate"] == 1.0
+    assert "field_inventory" not in slim["extraction_result"]
+    assert slim["suggested_patch"]["conversation_summary"] is None

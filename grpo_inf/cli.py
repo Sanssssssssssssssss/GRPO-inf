@@ -29,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--strict-split-source-uniqueness", action="store_true")
     audit.add_argument("--smoke-seed", action="store_true")
     audit.add_argument("--min-cases", type=int)
+    audit.add_argument("--require-extract-only", action="store_true")
+    audit.add_argument("--require-public-source-metadata", action="store_true")
 
     build = sub.add_parser("build-dataset", help="Build or normalize EvidenceReviewResult reviewer datasets")
     build.add_argument("--source", required=True, choices=["fatura", "zip-smoke"])
@@ -76,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
                 strict_split_source_uniqueness=args.strict_split_source_uniqueness,
                 smoke_seed=args.smoke_seed,
                 min_cases=args.min_cases,
+                require_extract_only=args.require_extract_only,
+                require_public_source_metadata=args.require_public_source_metadata,
             )
         )
     elif args.command == "build-dataset":

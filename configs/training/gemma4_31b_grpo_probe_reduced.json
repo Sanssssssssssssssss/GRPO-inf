@@ -1,13 +1,14 @@
 {
-  "model_id": "google/gemma-4-12B-it",
-  "data_path": "${DATA_ROOT}/grpo/prompts_train.jsonl",
-  "output_root": "outputs",
+  "model_id": "${MODEL_DIR}",
+  "data_path": "examples/tiny_dataset/grpo/prompts_train.jsonl",
+  "output_root": "${OUTPUT_ROOT}",
+  "notes": "CSD3 reduced 2xA100 Gemma 4 31B GRPO probe after the one-step minimal probe passes.",
   "bf16": true,
   "report_to": "none",
   "lora": {
     "task_type": "CAUSAL_LM",
-    "r": 16,
-    "lora_alpha": 32,
+    "r": 32,
+    "lora_alpha": 64,
     "lora_dropout": 0.05,
     "bias": "none",
     "target_modules": "model\\.language_model\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))"
@@ -15,18 +16,8 @@
   "grpo": {
     "num_generations": 4,
     "max_prompt_length": 4096,
-    "max_completion_length": 4096,
-    "generation_kwargs": {
-      "eos_token_id": [
-        1,
-        106
-      ],
-      "suppress_tokens": [
-        258883,
-        258882
-      ]
-    },
-    "learning_rate": 1e-06,
+    "max_completion_length": 512,
+    "learning_rate": 0.000001,
     "beta": 0.01,
     "loss_type": "dr_grpo",
     "scale_rewards": "batch",
@@ -34,10 +25,10 @@
     "top_p": 0.95,
     "per_device_train_batch_size": 1,
     "gradient_accumulation_steps": 4,
-    "max_steps": 500,
-    "logging_steps": 10,
-    "save_steps": 100,
-    "save_total_limit": 2,
+    "max_steps": 1,
+    "logging_steps": 1,
+    "save_steps": 1,
+    "save_total_limit": 1,
     "use_vllm": false,
     "gradient_checkpointing": true,
     "log_completions": true

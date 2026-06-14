@@ -1,7 +1,8 @@
 {
-  "model_id": "google/gemma-4-31B-it",
-  "data_path": "${DATA_ROOT}/grpo/prompts_train.jsonl",
-  "output_root": "outputs",
+  "model_id": "${MODEL_DIR}",
+  "data_path": "examples/tiny_dataset/grpo/prompts_train.jsonl",
+  "output_root": "${OUTPUT_ROOT}",
+  "notes": "CSD3 2xA100 feasibility probe for Gemma 4 31B GRPO. Uses tiny data and one step.",
   "bf16": true,
   "report_to": "none",
   "lora": {
@@ -13,9 +14,9 @@
     "target_modules": "model\\.language_model\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))"
   },
   "grpo": {
-    "num_generations": 4,
-    "max_prompt_length": 8192,
-    "max_completion_length": 1024,
+    "num_generations": 2,
+    "max_prompt_length": 1024,
+    "max_completion_length": 64,
     "learning_rate": 0.000001,
     "beta": 0.01,
     "loss_type": "dr_grpo",
@@ -23,15 +24,12 @@
     "temperature": 0.8,
     "top_p": 0.95,
     "per_device_train_batch_size": 1,
-    "gradient_accumulation_steps": 8,
-    "max_steps": 1000,
-    "logging_steps": 10,
-    "save_steps": 100,
-    "save_total_limit": 3,
-    "use_vllm": true,
-    "vllm_mode": "server",
-    "vllm_server_host": "${VLLM_SERVER_HOST}",
-    "vllm_server_port": "${VLLM_SERVER_PORT}",
+    "gradient_accumulation_steps": 1,
+    "max_steps": 1,
+    "logging_steps": 1,
+    "save_steps": 1,
+    "save_total_limit": 1,
+    "use_vllm": false,
     "gradient_checkpointing": true,
     "log_completions": true
   }
