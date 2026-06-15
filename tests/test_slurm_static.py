@@ -18,3 +18,9 @@ def test_accelerate_config_targets_two_processes() -> None:
     assert "distributed_type: DEEPSPEED" in text
     assert "num_processes: 2" in text
     assert "zero_stage: 3" in text
+
+
+def test_accelerate_config_4xa100_uses_auto_gradient_clipping() -> None:
+    text = Path("infra/slurm/accelerate_zero3_4xa100.yaml").read_text(encoding="utf-8")
+    assert "num_processes: 4" in text
+    assert "gradient_clipping: auto" in text
