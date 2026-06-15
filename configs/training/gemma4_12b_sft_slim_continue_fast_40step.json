@@ -1,0 +1,54 @@
+{
+  "model_id": "${MODEL_DIR}",
+  "init_adapter_path": "${INIT_ADAPTER_PATH}",
+  "data_path": "${RENDERED_SFT_DATA_ROOT}/sft/reviewer_train.jsonl",
+  "eval_data_path": "${RENDERED_SFT_DATA_ROOT}/sft/reviewer_dev.jsonl",
+  "output_root": "${OUTPUT_ROOT}",
+  "notes": "Fast 40-step slim-EVR SFT continuation probe from full-EVR SFT adapter.",
+  "metadata": {
+    "model_name": "google/gemma-4-12B-it",
+    "dataset_name": "invoice_reviewer_grpo_strict_evr_720_v1_rendered_sft_slim_evr_v1",
+    "source_dataset_version": "strict_evr_720_v1",
+    "compact_prompt_version": "compact_chat_v1",
+    "slim_gold_version": "slim_evr_v1",
+    "case_count": 720,
+    "train_cases": 576,
+    "dev_cases": 72,
+    "test_locked_cases": 72,
+    "continuation": true,
+    "max_steps": 40,
+    "slim_total_tokens_max": 3290,
+    "slim_total_tokens_p95": 3273,
+    "fast_probe": true
+  },
+  "bf16": true,
+  "report_to": "none",
+  "lora": {
+    "task_type": "CAUSAL_LM",
+    "r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "bias": "none",
+    "target_modules": "model\\.language_model\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))"
+  },
+  "sft": {
+    "model_init_kwargs": {
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa"
+    },
+    "max_steps": 40,
+    "learning_rate": 2e-05,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "max_length": 4096,
+    "completion_only_loss": true,
+    "packing": false,
+    "logging_steps": 1,
+    "save_steps": 20,
+    "save_total_limit": 2,
+    "gradient_checkpointing": true,
+    "gradient_checkpointing_kwargs": {
+      "use_reentrant": true
+    }
+  }
+}
