@@ -15,7 +15,9 @@
     "dev_cases": 72,
     "test_locked_cases": 72,
     "continuation": false,
-    "max_steps": 80
+    "max_steps": 80,
+    "slim_total_tokens_max": 3290,
+    "slim_total_tokens_p95": 3273
   },
   "bf16": true,
   "report_to": "none",
@@ -36,7 +38,7 @@
     "learning_rate": 2e-05,
     "per_device_train_batch_size": 1,
     "gradient_accumulation_steps": 4,
-    "max_length": 8192,
+    "max_length": 4096,
     "completion_only_loss": true,
     "packing": false,
     "logging_steps": 1,
