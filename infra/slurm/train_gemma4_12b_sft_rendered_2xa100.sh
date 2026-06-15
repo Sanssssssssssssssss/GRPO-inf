@@ -116,3 +116,4 @@ accelerate launch \
   --config "$CONFIG_PATH" \
   --run-id "$RUN_ID" \
   --execute
+python tools/analyze_training_run.py --run-dir "$RUN_ROOT" | tee "$METADATA_DIR/post_train_run_analysis.json" || true
