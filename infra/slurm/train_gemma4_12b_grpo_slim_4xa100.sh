@@ -183,10 +183,17 @@ import torch
 from transformers import AutoConfig
 
 print("cuda_available", torch.cuda.is_available())
-print("cuda_device_count", torch.cuda.device_count())
-for idx in range(torch.cuda.device_count()):
-    props = torch.cuda.get_device_properties(idx)
-    print(f"gpu{idx}", props.name, props.total_memory)
+try:
+    cuda_device_count = torch.cuda.device_count()
+    print("cuda_device_count", cuda_device_count)
+    for idx in range(cuda_device_count):
+        try:
+            props = torch.cuda.get_device_properties(idx)
+            print(f"gpu{idx}", props.name, props.total_memory)
+        except Exception as exc:  # diagnostic only; do not kill a valid Slurm allocation
+            print(f"gpu{idx}_properties_error", type(exc).__name__, str(exc))
+except Exception as exc:  # diagnostic only; training launch will run in fresh processes
+    print("cuda_metadata_error", type(exc).__name__, str(exc))
 cfg = AutoConfig.from_pretrained(os.environ["MODEL_DIR"], local_files_only=True)
 print("model_type", cfg.model_type)
 print("architectures", getattr(cfg, "architectures", None))
