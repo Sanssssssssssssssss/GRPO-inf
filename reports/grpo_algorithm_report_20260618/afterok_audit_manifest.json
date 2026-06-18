@@ -1,0 +1,317 @@
+[
+  {
+    "train_job_id": 30689472,
+    "train_run_id": "gemma4_12b_grpo_next14_compact_b003_bestg8_20260618",
+    "audit_job_id": 30722880,
+    "audit_run_id": "gemma4_12b_grpo_next14_compact_b003_bestg8_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689472",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689473,
+    "train_run_id": "gemma4_12b_grpo_next15_compact50_bestg8_20260618",
+    "audit_job_id": 30722881,
+    "audit_run_id": "gemma4_12b_grpo_next15_compact50_bestg8_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689473",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689474,
+    "train_run_id": "gemma4_12b_grpo_next16_compact_ctrl_bestg8_20260618",
+    "audit_job_id": 30722882,
+    "audit_run_id": "gemma4_12b_grpo_next16_compact_ctrl_bestg8_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689474",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689475,
+    "train_run_id": "gemma4_12b_grpo_next17_g8_cons_slim100_20260618",
+    "audit_job_id": 30722883,
+    "audit_run_id": "gemma4_12b_grpo_next17_g8_cons_slim100_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689475",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689476,
+    "train_run_id": "gemma4_12b_grpo_next18_g8_var_slim100_20260618",
+    "audit_job_id": 30722884,
+    "audit_run_id": "gemma4_12b_grpo_next18_g8_var_slim100_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689476",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689477,
+    "train_run_id": "gemma4_12b_grpo_next19_g8_b003_bestg4_20260618",
+    "audit_job_id": 30722885,
+    "audit_run_id": "gemma4_12b_grpo_next19_g8_b003_bestg4_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689477",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30689478,
+    "train_run_id": "gemma4_12b_grpo_next20_g8_var_sftfast40_20260618",
+    "audit_job_id": 30722886,
+    "audit_run_id": "gemma4_12b_grpo_next20_g8_var_sftfast40_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30689478",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720518,
+    "train_run_id": "gemma4_12b_grpo_next21_dapo_cliphigh_beta001_80step_20260618",
+    "audit_job_id": 30722887,
+    "audit_run_id": "gemma4_12b_grpo_next21_dapo_cliphigh_beta001_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720518",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720519,
+    "train_run_id": "gemma4_12b_grpo_next22_dapo_cliphigh_beta000_80step_20260618",
+    "audit_job_id": 30722888,
+    "audit_run_id": "gemma4_12b_grpo_next22_dapo_cliphigh_beta000_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720519",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720520,
+    "train_run_id": "gemma4_12b_grpo_next23_drgrpo_noscale_lr7e8_80step_20260618",
+    "audit_job_id": 30722889,
+    "audit_run_id": "gemma4_12b_grpo_next23_drgrpo_noscale_lr7e8_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720520",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720521,
+    "train_run_id": "gemma4_12b_grpo_next24_dapo_noscale_cliphigh_80step_20260618",
+    "audit_job_id": 30722890,
+    "audit_run_id": "gemma4_12b_grpo_next24_dapo_noscale_cliphigh_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720521",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720522,
+    "train_run_id": "gemma4_12b_grpo_next25_sapo_softgate_beta001_80step_20260618",
+    "audit_job_id": 30722891,
+    "audit_run_id": "gemma4_12b_grpo_next25_sapo_softgate_beta001_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720522",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720523,
+    "train_run_id": "gemma4_12b_grpo_next26_sapo_softgate_neg110_80step_20260618",
+    "audit_job_id": 30722892,
+    "audit_run_id": "gemma4_12b_grpo_next26_sapo_softgate_neg110_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720523",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720524,
+    "train_run_id": "gemma4_12b_grpo_next27_luspo_sequence_beta001_60step_20260618",
+    "audit_job_id": 30722893,
+    "audit_run_id": "gemma4_12b_grpo_next27_luspo_sequence_beta001_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720524",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720525,
+    "train_run_id": "gemma4_12b_grpo_next28_dapo_topentropy02_80step_20260618",
+    "audit_job_id": 30722894,
+    "audit_run_id": "gemma4_12b_grpo_next28_dapo_topentropy02_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720525",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720526,
+    "train_run_id": "gemma4_12b_grpo_next29_drgrpo_topentropy05_80step_20260618",
+    "audit_job_id": 30722895,
+    "audit_run_id": "gemma4_12b_grpo_next29_drgrpo_topentropy05_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720526",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720527,
+    "train_run_id": "gemma4_12b_grpo_next30_dapo_offpolicy_mask05_80step_20260618",
+    "audit_job_id": 30722896,
+    "audit_run_id": "gemma4_12b_grpo_next30_dapo_offpolicy_mask05_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720527",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720528,
+    "train_run_id": "gemma4_12b_grpo_next31_drgrpo_refsync_80step_20260618",
+    "audit_job_id": 30722897,
+    "audit_run_id": "gemma4_12b_grpo_next31_drgrpo_refsync_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720528",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720532,
+    "train_run_id": "gemma4_12b_grpo_next32_drgrpo_lowtemp_lr5e8_120step_20260618",
+    "audit_job_id": 30722898,
+    "audit_run_id": "gemma4_12b_grpo_next32_drgrpo_lowtemp_lr5e8_120step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720532",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720533,
+    "train_run_id": "gemma4_12b_grpo_next33_drgrpo_hightemp_dispersion_80step_20260618",
+    "audit_job_id": 30722899,
+    "audit_run_id": "gemma4_12b_grpo_next33_drgrpo_hightemp_dispersion_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720533",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720534,
+    "train_run_id": "gemma4_12b_grpo_next34_dapo_g16_cliphigh_60step_20260618",
+    "audit_job_id": 30722900,
+    "audit_run_id": "gemma4_12b_grpo_next34_dapo_g16_cliphigh_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720534",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720731,
+    "train_run_id": "gemma4_12b_grpo_next35_cispo_scalerl_beta001_60step_20260618",
+    "audit_job_id": 30722901,
+    "audit_run_id": "gemma4_12b_grpo_next35_cispo_scalerl_beta001_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720731",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720732,
+    "train_run_id": "gemma4_12b_grpo_next36_cispo_topentropy02_60step_20260618",
+    "audit_job_id": 30722902,
+    "audit_run_id": "gemma4_12b_grpo_next36_cispo_topentropy02_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720732",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720733,
+    "train_run_id": "gemma4_12b_grpo_next37_vespo_default_beta001_60step_20260618",
+    "audit_job_id": 30722903,
+    "audit_run_id": "gemma4_12b_grpo_next37_vespo_default_beta001_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720733",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720734,
+    "train_run_id": "gemma4_12b_grpo_next38_vespo_conservative_60step_20260618",
+    "audit_job_id": 30722904,
+    "audit_run_id": "gemma4_12b_grpo_next38_vespo_conservative_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720734",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720735,
+    "train_run_id": "gemma4_12b_grpo_next39_bnpo_batchnorm_80step_20260618",
+    "audit_job_id": 30722905,
+    "audit_run_id": "gemma4_12b_grpo_next39_bnpo_batchnorm_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720735",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720736,
+    "train_run_id": "gemma4_12b_grpo_next40_drgrpo_delta14_80step_20260618",
+    "audit_job_id": 30722906,
+    "audit_run_id": "gemma4_12b_grpo_next40_drgrpo_delta14_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720736",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720737,
+    "train_run_id": "gemma4_12b_grpo_next41_dapo_minp005_80step_20260618",
+    "audit_job_id": 30722907,
+    "audit_run_id": "gemma4_12b_grpo_next41_dapo_minp005_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720737",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720738,
+    "train_run_id": "gemma4_12b_grpo_next42_dapo_minp002_topentropy02_80step_20260618",
+    "audit_job_id": 30722908,
+    "audit_run_id": "gemma4_12b_grpo_next42_dapo_minp002_topentropy02_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720738",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720739,
+    "train_run_id": "gemma4_12b_grpo_next43_dapo_numiter2_60step_20260618",
+    "audit_job_id": 30722909,
+    "audit_run_id": "gemma4_12b_grpo_next43_dapo_numiter2_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720739",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720740,
+    "train_run_id": "gemma4_12b_grpo_next44_dapo_g16_topentropy05_50step_20260618",
+    "audit_job_id": 30722910,
+    "audit_run_id": "gemma4_12b_grpo_next44_dapo_g16_topentropy05_50step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720740",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720741,
+    "train_run_id": "gemma4_12b_grpo_next45_sapo_topentropy02_70step_20260618",
+    "audit_job_id": 30722911,
+    "audit_run_id": "gemma4_12b_grpo_next45_sapo_topentropy02_70step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720741",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720742,
+    "train_run_id": "gemma4_12b_grpo_next46_dapo_offpolicy025_80step_20260618",
+    "audit_job_id": 30722912,
+    "audit_run_id": "gemma4_12b_grpo_next46_dapo_offpolicy025_80step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720742",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720743,
+    "train_run_id": "gemma4_12b_grpo_next47_vespo_topentropy05_60step_20260618",
+    "audit_job_id": 30722913,
+    "audit_run_id": "gemma4_12b_grpo_next47_vespo_topentropy05_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720743",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  },
+  {
+    "train_job_id": 30720744,
+    "train_run_id": "gemma4_12b_grpo_next48_cispo_offpolicy05_60step_20260618",
+    "audit_job_id": 30722914,
+    "audit_run_id": "gemma4_12b_grpo_next48_cispo_offpolicy05_60step_20260618_audit16_afterok_20260618",
+    "dependency": "afterok:30720744",
+    "audit_limit": 16,
+    "max_new_tokens": 4096
+  }
+]
