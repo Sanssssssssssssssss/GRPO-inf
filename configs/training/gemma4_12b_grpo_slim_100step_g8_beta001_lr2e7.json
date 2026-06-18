@@ -1,0 +1,84 @@
+{
+  "model_id": "${MODEL_DIR}",
+  "init_adapter_path": "${INIT_ADAPTER_PATH}",
+  "data_path": "${COMPACT_SLIM_DATA_ROOT}/grpo/prompts_train.jsonl",
+  "eval_data_path": "${COMPACT_SLIM_DATA_ROOT}/grpo/prompts_dev.jsonl",
+  "output_root": "${OUTPUT_ROOT}",
+  "notes": "Best-mechanism conservative continuation: G=8, small KL, lower LR, correct Gemma4 EOS [1,106].",
+  "metadata": {
+    "model_name": "google/gemma-4-12B-it",
+    "dataset_name": "invoice_reviewer_grpo_strict_evr_720_v1_compact_chat_slim_evr_v1",
+    "source_dataset_version": "strict_evr_720_v1",
+    "compact_prompt_version": "compact_chat_v1",
+    "slim_gold_version": "slim_evr_v1",
+    "case_count": 720,
+    "train_cases": 576,
+    "dev_cases": 72,
+    "test_locked_cases": 72,
+    "requires_sft_adapter": true,
+    "max_completion_length": 1536,
+    "gold_completion_tokens_p95": 1039,
+    "gold_completion_tokens_max": 1046,
+    "max_steps": 100,
+    "conservative_run": true,
+    "ablation": "slim_100step_g8_beta001_lr2e7",
+    "continuation_from": "selected_by_INIT_ADAPTER_PATH",
+    "mechanism": "g8_variance_kl_continuation"
+  },
+  "bf16": true,
+  "report_to": "none",
+  "lora": {
+    "task_type": "CAUSAL_LM",
+    "r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "bias": "none",
+    "target_modules": "model\\.language_model\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))"
+  },
+  "grpo": {
+    "model_init_kwargs": {
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa"
+    },
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "generation_kwargs": {
+      "eos_token_id": [
+        1,
+        106
+      ],
+      "suppress_tokens": [
+        258883,
+        258882
+      ]
+    },
+    "num_generations": 8,
+    "max_completion_length": 1536,
+    "generation_batch_size": 8,
+    "learning_rate": 2e-07,
+    "beta": 0.01,
+    "loss_type": "dr_grpo",
+    "scale_rewards": "batch",
+    "temperature": 0.55,
+    "top_p": 0.9,
+    "repetition_penalty": 1.05,
+    "per_device_train_batch_size": 2,
+    "gradient_accumulation_steps": 1,
+    "max_steps": 100,
+    "logging_steps": 1,
+    "save_steps": 10,
+    "save_total_limit": 8,
+    "use_vllm": false,
+    "ds3_gather_for_generation": true,
+    "gradient_checkpointing": true,
+    "gradient_checkpointing_kwargs": {
+      "use_reentrant": true
+    },
+    "mask_truncated_completions": true,
+    "log_completions": true,
+    "max_grad_norm": 0.3
+  },
+  "local_files_only": true,
+  "trl_eos_token_id_for_mask": 106
+}
