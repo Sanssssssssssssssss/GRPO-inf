@@ -79,6 +79,7 @@ code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
 <tr><td>next34_dapo_g16_cliphigh_60step_20260618</td><td>dapo_g16_dynamic_sampling_proxy</td><td>dapo</td><td>batch</td><td>0.001</td><td>0.68</td><td>16</td><td>60</td></tr>
 </tbody></table>
 
+<p><b>Additional aggressive wave.</b> A third wave adds CISPO, VESPO, BNPO, two-sided clipping, min-p sampling, num_iterations=2, and combined entropy/off-policy variants. These are higher-risk experiments and should be judged by completion stability first, then by the next06 promotion thresholds.</p>
 <h2>Decision Rules For Picking The Next Parent</h2>
 <ul>
 <li>Promote a run only if it completes with exit code 0 and has no numerical anomaly steps.</li>

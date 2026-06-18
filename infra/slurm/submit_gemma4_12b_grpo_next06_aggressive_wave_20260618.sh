@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WORK_ROOT="${WORK_ROOT:-/rds-d6/user/cx272/hpc-work}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-$WORK_ROOT/outputs/grpo-inf}"
+NEXT06_ADAPTER="$OUTPUT_ROOT/runs/gemma4_12b_grpo_next06_g8_longlow_bestg8_20260618/adapter"
+
+if [ ! -f "$NEXT06_ADAPTER/adapter_model.safetensors" ]; then
+  echo "ERROR: missing next06 adapter: $NEXT06_ADAPTER" >&2
+  exit 2
+fi
+
+submit_slim() {
+  local run_id="$1"
+  local config_path="$2"
+  sbatch --export=ALL,RUN_ID="$run_id",CONFIG_PATH="$config_path",INIT_ADAPTER_PATH="$NEXT06_ADAPTER",SKIP_LORA_PREFLIGHT=1 \
+    infra/slurm/train_gemma4_12b_grpo_slim_4xa100.sh
+}
+
+# Higher-risk algorithm wave continuing from the best completed run, next06.
+submit_slim gemma4_12b_grpo_next35_cispo_scalerl_beta001_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_scalerl_beta001_60step.json
+submit_slim gemma4_12b_grpo_next36_cispo_topentropy02_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_topentropy02_60step.json
+submit_slim gemma4_12b_grpo_next37_vespo_default_beta001_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_default_beta001_60step.json
+submit_slim gemma4_12b_grpo_next38_vespo_conservative_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_conservative_60step.json
+submit_slim gemma4_12b_grpo_next39_bnpo_batchnorm_80step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_bnpo_batchnorm_80step.json
+submit_slim gemma4_12b_grpo_next40_drgrpo_delta14_80step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_drgrpo_delta14_80step.json
+submit_slim gemma4_12b_grpo_next41_dapo_minp005_80step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_minp005_80step.json
+submit_slim gemma4_12b_grpo_next42_dapo_minp002_topentropy02_80step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_minp002_topentropy02_80step.json
+submit_slim gemma4_12b_grpo_next43_dapo_numiter2_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_numiter2_60step.json
+submit_slim gemma4_12b_grpo_next44_dapo_g16_topentropy05_50step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_g16_topentropy05_50step.json
+submit_slim gemma4_12b_grpo_next45_sapo_topentropy02_70step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_sapo_topentropy02_70step.json
+submit_slim gemma4_12b_grpo_next46_dapo_offpolicy025_80step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_offpolicy025_80step.json
+submit_slim gemma4_12b_grpo_next47_vespo_topentropy05_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_topentropy05_60step.json
+submit_slim gemma4_12b_grpo_next48_cispo_offpolicy05_60step_20260618 configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_offpolicy05_60step.json

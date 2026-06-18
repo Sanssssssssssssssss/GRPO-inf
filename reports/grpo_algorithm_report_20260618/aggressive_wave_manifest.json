@@ -1,0 +1,156 @@
+[
+  {
+    "run_id": "gemma4_12b_grpo_next35_cispo_scalerl_beta001_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_scalerl_beta001_60step.json",
+    "mechanism": "cispo_importance_weight_clipping",
+    "loss_type": "cispo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next36_cispo_topentropy02_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_topentropy02_60step.json",
+    "mechanism": "cispo_top_entropy_020",
+    "loss_type": "cispo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.62,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next37_vespo_default_beta001_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_default_beta001_60step.json",
+    "mechanism": "vespo_variational_soft_policy",
+    "loss_type": "vespo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next38_vespo_conservative_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_conservative_60step.json",
+    "mechanism": "vespo_conservative_asymmetric_weights",
+    "loss_type": "vespo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.56,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next39_bnpo_batchnorm_80step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_bnpo_batchnorm_80step.json",
+    "mechanism": "bnpo_local_active_token_normalization",
+    "loss_type": "bnpo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 80
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next40_drgrpo_delta14_80step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_drgrpo_delta14_80step.json",
+    "mechanism": "dr_grpo_two_sided_upper_clip_delta14",
+    "loss_type": "dr_grpo",
+    "scale_rewards": "batch",
+    "beta": 0.01,
+    "temperature": 0.56,
+    "num_generations": 8,
+    "max_steps": 80
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next41_dapo_minp005_80step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_minp005_80step.json",
+    "mechanism": "dapo_min_p_sampling_005",
+    "loss_type": "dapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.65,
+    "num_generations": 8,
+    "max_steps": 80
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next42_dapo_minp002_topentropy02_80step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_minp002_topentropy02_80step.json",
+    "mechanism": "dapo_min_p_002_top_entropy_020",
+    "loss_type": "dapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.65,
+    "num_generations": 8,
+    "max_steps": 80
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next43_dapo_numiter2_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_numiter2_60step.json",
+    "mechanism": "dapo_two_policy_iterations",
+    "loss_type": "dapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next44_dapo_g16_topentropy05_50step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_g16_topentropy05_50step.json",
+    "mechanism": "dapo_g16_top_entropy_050",
+    "loss_type": "dapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.68,
+    "num_generations": 16,
+    "max_steps": 50
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next45_sapo_topentropy02_70step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_sapo_topentropy02_70step.json",
+    "mechanism": "sapo_top_entropy_020",
+    "loss_type": "sapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.62,
+    "num_generations": 8,
+    "max_steps": 70
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next46_dapo_offpolicy025_80step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_offpolicy025_80step.json",
+    "mechanism": "dapo_off_policy_masking_025",
+    "loss_type": "dapo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 80
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next47_vespo_topentropy05_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_topentropy05_60step.json",
+    "mechanism": "vespo_top_entropy_050",
+    "loss_type": "vespo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 60
+  },
+  {
+    "run_id": "gemma4_12b_grpo_next48_cispo_offpolicy05_60step_20260618",
+    "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_cispo_offpolicy05_60step.json",
+    "mechanism": "cispo_off_policy_masking_050",
+    "loss_type": "cispo",
+    "scale_rewards": "batch",
+    "beta": 0.001,
+    "temperature": 0.6,
+    "num_generations": 8,
+    "max_steps": 60
+  }
+]
