@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Gemma4 12B Invoice EVR GRPO Technical Report</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 0; color: #111827; background: #f9fafb; }
+main { max-width: 1180px; margin: 0 auto; padding: 36px 28px 64px; background: white; }
+h1 { font-size: 32px; margin: 0 0 18px; }
+h2 { font-size: 22px; margin-top: 34px; border-top: 1px solid #e5e7eb; padding-top: 22px; }
+h3 { font-size: 17px; margin-top: 22px; }
+p, li { line-height: 1.55; font-size: 15px; }
+.summary { background: #eef2ff; border-left: 4px solid #4f46e5; padding: 14px 18px; margin: 18px 0 24px; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 18px 0; }
+.metric { border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background: #fff; }
+.metric b { display: block; font-size: 22px; margin-bottom: 4px; }
+.metric span { color: #6b7280; font-size: 12px; }
+table { border-collapse: collapse; width: 100%; margin: 14px 0 22px; font-size: 13px; }
+th, td { border: 1px solid #e5e7eb; padding: 8px 9px; text-align: left; vertical-align: top; }
+th { background: #f3f4f6; }
+img { max-width: 100%; border: 1px solid #e5e7eb; border-radius: 6px; background: white; }
+code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
+.small { color: #6b7280; font-size: 13px; }
+</style>
+</head>
+<body><main>
+<h1>Gemma4 12B Invoice EVR GRPO Technical Report</h1>
+<section class="summary">
+<p><b>Main result.</b> GRPO is not finished and should not be declared globally optimal. The first completed algorithm batch proves the infrastructure and reward path are healthy, and <code>gemma4_12b_grpo_next06_g8_longlow_bestg8_20260618</code> is the current best checkpoint. It should be treated as the new parent model for a second algorithm wave.</p>
+<p><b>Best observed recipe.</b> The strongest line so far is <code>G=8</code>, slim EVR targets, low learning rate, small KL, correct Gemma4 EOS masking, and continuation from the prior best G8 adapter. It reached reward mean <b>0.8990</b>, schema valid <b>0.9472</b>, contract valid <b>0.9278</b>, quote hit <b>0.9889</b>, clipped ratio <b>0.0194</b>, and no anomaly steps.</p>
+</section>
+<div class="metric-grid">
+<div class="metric"><b>13</b><span>completed GRPO runs analyzed</span></div>
+<div class="metric"><b>0.8990</b><span>best reward mean</span></div>
+<div class="metric"><b>0.9472</b><span>next06 schema valid mean</span></div>
+<div class="metric"><b>137.4s</b><span>next06 avg step time</span></div>
+</div>
+
+<h2>Current Evidence: next06 Is Best, But Not Final</h2>
+<p>The completed batch fixed the previous failure mode: completion clipping is low, EOS termination is healthy, reward is non-degenerate, and the run artifacts are saved under RDS. The best run is next06, not because it is perfect, but because it combines the highest reward mean with the strongest schema/contract rates and no numerical anomalies.</p>
+<img src="reward_mean_by_run.png" alt="Reward mean by completed GRPO run">
+<p>The chart ranks completed runs by trainer reward mean. The top cluster is close, but next06 has more steps and higher schema/contract quality, so it is a better parent checkpoint than the 50-step alternatives.</p>
+<table><thead><tr><th>Run</th><th>Steps</th><th>Reward mean</th><th>Schema valid</th><th>Contract valid</th><th>Quote hit</th><th>Clipped ratio</th><th>Avg step time</th></tr></thead><tbody>
+<tr><td>next06_g8_longlow_bestg8_20260618</td><td>90</td><td>0.8990</td><td>0.9472</td><td>0.9278</td><td>0.9889</td><td>0.0194</td><td>137.4s</td></tr>
+<tr><td>next04_g8_mid_bestg8_20260618</td><td>50</td><td>0.8905</td><td>0.9275</td><td>0.9150</td><td>0.9850</td><td>0.0225</td><td>138.1s</td></tr>
+<tr><td>next11_g8_lowtemp_bestg8_20260618</td><td>50</td><td>0.8821</td><td>0.9250</td><td>0.9025</td><td>0.9825</td><td>0.0200</td><td>140.0s</td></tr>
+<tr><td>next01_g8_cons_bestg8_20260618</td><td>50</td><td>0.8797</td><td>0.9150</td><td>0.9000</td><td>0.9850</td><td>0.0250</td><td>138.5s</td></tr>
+<tr><td>next10_g8_b005_bestg8_20260618</td><td>50</td><td>0.8770</td><td>0.9075</td><td>0.8975</td><td>0.9825</td><td>0.0250</td><td>141.7s</td></tr>
+<tr><td>next12_g8_norep_bestg8_20260618</td><td>50</td><td>0.8704</td><td>0.9175</td><td>0.8925</td><td>0.9825</td><td>0.0150</td><td>141.0s</td></tr>
+<tr><td>next02_g8_var_bestg8_20260618</td><td>50</td><td>0.8685</td><td>0.9125</td><td>0.8975</td><td>0.9725</td><td>0.0175</td><td>140.1s</td></tr>
+<tr><td>next03_g8_b003_t075_bestg8_20260618</td><td>50</td><td>0.8658</td><td>0.9150</td><td>0.8900</td><td>0.9800</td><td>0.0175</td><td>138.3s</td></tr>
+</tbody></table>
+
+<h2>Stability Signals Are Now Acceptable</h2>
+<p>The earlier raw-GRPO problem was not subtle: truncated output, missing EOS, zero useful gradients, and wrapper/thought leakage. The completed slim runs no longer show that pattern. Clipped ratio stays near zero, schema validity is mostly above 0.90, and quote hit is near 0.98 on the best lines.</p>
+<img src="quality_clip_by_run.png" alt="Schema and contract validity vs clipping by run">
+<p>The remaining issue is late-stage reward saturation. Several steps reach reward standard deviation zero, especially when all generations for a prompt become valid. That does not invalidate the run, but it reduces effective gradient. The next wave therefore targets reward dispersion and length/scale bias rather than simply increasing step count.</p>
+
+<h2>Algorithm Interpretation</h2>
+<p>Public GRPO recipes point to the same failure modes we see locally. DeepSeekMath introduced GRPO as a memory-efficient PPO variant for reasoning tasks. DAPO reports that naive GRPO can suffer entropy collapse, reward noise, and instability, and proposes Clip-Higher, dynamic sampling, token-level policy gradient, and overlong shaping. TRL exposes these ideas through <code>loss_type</code>, <code>epsilon_high</code>, <code>mask_truncated_completions</code>, <code>scale_rewards</code>, sequence-level importance sampling, SAPO, and entropy filtering.</p>
+<p>For this invoice EVR task, the reward is rule-based, structured, and often low-dispersion once the model learns the schema. That matches the MDP-GRPO warning about homogeneous groups and zero-variance collapse in multi-constraint instruction following. The practical response is not one giant blind run; it is a controlled second wave from next06.</p>
+
+<h2>Second Algorithm Wave Submitted For Testing</h2>
+<p>The new configs continue from next06 and cover five mechanisms: DAPO/token-level loss, Dr.GRPO no-scale, SAPO soft gating, sequence-level importance sampling, and top-entropy/off-policy stabilization. Each run has its own config and run id, so failed experimental objectives do not corrupt the best checkpoint.</p>
+<table><thead><tr><th>Run</th><th>Mechanism</th><th>Loss</th><th>Scale</th><th>Beta</th><th>Temp</th><th>G</th><th>Steps</th></tr></thead><tbody>
+<tr><td>next21_dapo_cliphigh_beta001_80step_20260618</td><td>dapo_token_loss_clip_higher_small_kl</td><td>dapo</td><td>batch</td><td>0.001</td><td>0.6</td><td>8</td><td>80</td></tr>
+<tr><td>next22_dapo_cliphigh_beta000_80step_20260618</td><td>dapo_token_loss_clip_higher_no_kl</td><td>dapo</td><td>batch</td><td>0.0</td><td>0.62</td><td>8</td><td>80</td></tr>
+<tr><td>next23_drgrpo_noscale_lr7e8_80step_20260618</td><td>dr_grpo_no_reward_scaling</td><td>dr_grpo</td><td>none</td><td>0.01</td><td>0.55</td><td>8</td><td>80</td></tr>
+<tr><td>next24_dapo_noscale_cliphigh_80step_20260618</td><td>dapo_no_reward_scaling_clip_higher</td><td>dapo</td><td>none</td><td>0.001</td><td>0.6</td><td>8</td><td>80</td></tr>
+<tr><td>next25_sapo_softgate_beta001_80step_20260618</td><td>sapo_soft_adaptive_policy_optimization</td><td>sapo</td><td>batch</td><td>0.001</td><td>0.6</td><td>8</td><td>80</td></tr>
+<tr><td>next26_sapo_softgate_neg110_80step_20260618</td><td>sapo_stronger_negative_gate</td><td>sapo</td><td>batch</td><td>0.001</td><td>0.62</td><td>8</td><td>80</td></tr>
+<tr><td>next27_luspo_sequence_beta001_60step_20260618</td><td>luspo_sequence_level_is</td><td>luspo</td><td>batch</td><td>0.001</td><td>0.6</td><td>8</td><td>60</td></tr>
+<tr><td>next28_dapo_topentropy02_80step_20260618</td><td>dapo_top_entropy_token_filtering_020</td><td>dapo</td><td>batch</td><td>0.001</td><td>0.62</td><td>8</td><td>80</td></tr>
+<tr><td>next29_drgrpo_topentropy05_80step_20260618</td><td>dr_grpo_top_entropy_token_filtering_050</td><td>dr_grpo</td><td>batch</td><td>0.01</td><td>0.58</td><td>8</td><td>80</td></tr>
+<tr><td>next30_dapo_offpolicy_mask05_80step_20260618</td><td>dapo_off_policy_masking</td><td>dapo</td><td>batch</td><td>0.001</td><td>0.6</td><td>8</td><td>80</td></tr>
+<tr><td>next31_drgrpo_refsync_80step_20260618</td><td>dr_grpo_reference_sync</td><td>dr_grpo</td><td>batch</td><td>0.002</td><td>0.56</td><td>8</td><td>80</td></tr>
+<tr><td>next32_drgrpo_lowtemp_lr5e8_120step_20260618</td><td>dr_grpo_low_temp_long_continuation</td><td>dr_grpo</td><td>batch</td><td>0.01</td><td>0.45</td><td>8</td><td>120</td></tr>
+<tr><td>next33_drgrpo_hightemp_dispersion_80step_20260618</td><td>multi_temperature_proxy_high_dispersion</td><td>dr_grpo</td><td>batch</td><td>0.02</td><td>0.75</td><td>8</td><td>80</td></tr>
+<tr><td>next34_dapo_g16_cliphigh_60step_20260618</td><td>dapo_g16_dynamic_sampling_proxy</td><td>dapo</td><td>batch</td><td>0.001</td><td>0.68</td><td>16</td><td>60</td></tr>
+</tbody></table>
+
+<h2>Decision Rules For Picking The Next Parent</h2>
+<ul>
+<li>Promote a run only if it completes with exit code 0 and has no numerical anomaly steps.</li>
+<li>Prefer reward mean above next06 while keeping schema valid >= 0.95, contract valid >= 0.93, quote hit >= 0.985, clipped ratio <= 0.03.</li>
+<li>Reject a run as parent if it improves reward only by shortening/degenerating completions, losing quote accuracy, or producing zero reward variance for most steps.</li>
+<li>If DAPO/SAPO improves quality without raising clip or KL, use it as the third-wave parent. If not, continue the conservative next06 recipe with lower LR and dev-set audit.</li>
+</ul>
+
+<h2>Limitations And Robustness Checks</h2>
+<p>This report is based on trainer-side reward diagnostics and 16-case generation audits, not a full locked test evaluation. The public strict EVR 720 data is suitable for smoke and algorithm search, but final claims still require the FATURA-only pipeline gate and a larger held-out audit. The 72-case long audits timed out, so they should be rerun selectively on the best two checkpoints after the algorithm wave finishes.</p>
+
+<h2>Recommended Next Steps</h2>
+<ol>
+<li>Let the pending next14-next20 jobs and the next06 algorithm wave run through the queue.</li>
+<li>When each completes, regenerate this report and compare against next06 using the thresholds above.</li>
+<li>Run a 72-case dev audit only for the top two candidates; do not spend audit GPU on every exploratory variant.</li>
+<li>Once FATURA data is ready and passes strict split/source/quote gates, train the selected algorithm recipe on FATURA instead of declaring strict EVR 720 as final.</li>
+</ol>
+
+<h2>Sources</h2>
+<ul>
+<li><a href="https://huggingface.co/docs/trl/main/en/grpo_trainer">Hugging Face TRL GRPOTrainer documentation</a></li>
+<li><a href="https://arxiv.org/abs/2402.03300">DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models</a></li>
+<li><a href="https://arxiv.org/abs/2503.14476">DAPO: An Open-Source LLM Reinforcement Learning System at Scale</a></li>
+<li><a href="https://arxiv.org/abs/2511.20347">Soft Adaptive Policy Optimization</a></li>
+<li><a href="https://arxiv.org/abs/2606.06058">MDP-GRPO: Stabilized Group Relative Policy Optimization for Multi-Constraint Instruction Following</a></li>
+</ul>
+<p class="small">Supporting files: <code>completed_run_metrics.csv</code>, <code>algorithm_wave_manifest.json</code>, and the per-run RDS visualizations under <code>/rds-d6/user/cx272/hpc-work/outputs/grpo-inf/runs</code>.</p>
+</main></body></html>
