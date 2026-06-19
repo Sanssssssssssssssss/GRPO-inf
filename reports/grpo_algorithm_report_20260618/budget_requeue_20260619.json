@@ -1,0 +1,92 @@
+{
+  "timestamp_bst": "2026-06-19 12:18:00 BST",
+  "objective": "Reduce queued/requested GPU-hours while preserving coverage of high-value GRPO algorithm families.",
+  "actual_gpuh_since_2026_06_17_at_requeue": 401.95,
+  "queue_policy": {
+    "do_not_cancel_running_jobs": true,
+    "replace_long_pending_8h_jobs_with_short_walltime_jobs": true,
+    "audit_walltime_hours": 1.0,
+    "train_walltime_basis": "historical completed 60-step jobs ran about 2.5h and 80-step jobs about 3.1-3.5h; short walltimes keep a modest buffer without advertising 8h per pending job"
+  },
+  "pending_requested_gpuh_after_requeue": {
+    "new_short_train_jobs": 94.0,
+    "new_short_audit_jobs": 6.0,
+    "pre_existing_pending_audit_jobs": 14.0,
+    "total_pending_requested_gpuh": 114.0
+  },
+  "running_jobs_left_untouched": [
+    {
+      "job_id": 30739100,
+      "run_id": "gemma4_12b_grpo_next32_drgrpo_lowtemp_lr5e8_120step_20260618_sl3fix_20260618",
+      "mechanism": "dr_grpo_low_temp_long_continuation"
+    },
+    {
+      "job_id": 30739110,
+      "run_id": "gemma4_12b_grpo_next37_vespo_default_beta001_60step_20260618_sl3fix_20260618",
+      "mechanism": "vespo_variational_soft_policy"
+    }
+  ],
+  "cancelled_and_requeued_same_algorithm": [
+    {
+      "old_train_job_id": 30739122,
+      "old_audit_job_id": 30739123,
+      "new_train_job_id": 30763941,
+      "new_audit_job_id": 30763942,
+      "new_train_walltime": "03:30:00",
+      "run_id": "gemma4_12b_grpo_next43_dapo_numiter2_60step_20260618_budget_20260619",
+      "mechanism": "dapo_two_policy_iterations",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_numiter2_60step.json"
+    },
+    {
+      "old_train_job_id": 30739124,
+      "old_audit_job_id": 30739125,
+      "new_train_job_id": 30763943,
+      "new_audit_job_id": 30763944,
+      "new_train_walltime": "03:00:00",
+      "run_id": "gemma4_12b_grpo_next44_dapo_g16_topentropy05_50step_20260618_budget_20260619",
+      "mechanism": "dapo_g16_top_entropy_050",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_g16_topentropy05_50step.json"
+    }
+  ],
+  "restored_after_accidental_over_trim": [
+    {
+      "train_job_id": 30763945,
+      "audit_job_id": 30763946,
+      "train_walltime": "03:30:00",
+      "run_id": "gemma4_12b_grpo_next38_vespo_conservative_60step_20260618_budget_20260619",
+      "mechanism": "vespo_conservative_asymmetric_weights",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_vespo_conservative_60step.json"
+    },
+    {
+      "train_job_id": 30763947,
+      "audit_job_id": 30763948,
+      "train_walltime": "04:30:00",
+      "run_id": "gemma4_12b_grpo_next39_bnpo_batchnorm_80step_20260618_budget_20260619",
+      "mechanism": "bnpo_local_active_token_normalization",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_bnpo_batchnorm_80step.json"
+    },
+    {
+      "train_job_id": 30763949,
+      "audit_job_id": 30763950,
+      "train_walltime": "04:30:00",
+      "run_id": "gemma4_12b_grpo_next40_drgrpo_delta14_80step_20260618_budget_20260619",
+      "mechanism": "dr_grpo_two_sided_upper_clip_delta14",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_drgrpo_delta14_80step.json"
+    },
+    {
+      "train_job_id": 30763951,
+      "audit_job_id": 30763952,
+      "train_walltime": "04:30:00",
+      "run_id": "gemma4_12b_grpo_next42_dapo_minp002_topentropy02_80step_20260618_budget_20260619",
+      "mechanism": "dapo_min_p_002_top_entropy_020",
+      "config_path": "configs/training/gemma4_12b_grpo_slim_next06aggr_dapo_minp002_topentropy02_80step.json"
+    }
+  ],
+  "deferred_not_rejected": [
+    "gemma4_12b_grpo_next41_dapo_minp005_80step_20260618",
+    "gemma4_12b_grpo_next45_sapo_topentropy02_70step_20260618",
+    "gemma4_12b_grpo_next46_dapo_offpolicy025_80step_20260618",
+    "gemma4_12b_grpo_next47_vespo_topentropy05_60step_20260618",
+    "gemma4_12b_grpo_next48_cispo_offpolicy05_60step_20260618"
+  ]
+}
