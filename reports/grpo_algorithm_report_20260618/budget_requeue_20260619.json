@@ -6,13 +6,23 @@
     "do_not_cancel_running_jobs": true,
     "replace_long_pending_8h_jobs_with_short_walltime_jobs": true,
     "audit_walltime_hours": 1.0,
-    "train_walltime_basis": "historical completed 60-step jobs ran about 2.5h and 80-step jobs about 3.1-3.5h; short walltimes keep a modest buffer without advertising 8h per pending job"
+    "train_walltime_basis": "historical completed 60-step jobs ran about 2.5h and 80-step jobs about 3.1-3.5h; short walltimes keep a modest buffer without advertising 8h per pending job",
+    "reduced_existing_pending_audit_timelimits_to_1h": true,
+    "reduced_existing_pending_audit_job_ids": [
+      30739103,
+      30739097,
+      30739095,
+      30739111,
+      30739109,
+      30739107,
+      30739101
+    ]
   },
   "pending_requested_gpuh_after_requeue": {
     "new_short_train_jobs": 94.0,
     "new_short_audit_jobs": 6.0,
-    "pre_existing_pending_audit_jobs": 14.0,
-    "total_pending_requested_gpuh": 114.0
+    "pre_existing_pending_audit_jobs": 7.0,
+    "total_pending_requested_gpuh": 107.0
   },
   "running_jobs_left_untouched": [
     {
